@@ -1,0 +1,15 @@
+# Environment files
+.env
+.env.local
+
+# Build
+target/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store

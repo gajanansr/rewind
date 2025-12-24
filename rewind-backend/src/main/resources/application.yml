@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: rewind-backend
+
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/rewind}
+    username: ${SUPABASE_DB_USER:postgres}
+    password: ${SUPABASE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: ${PORT:8080}
+
+# Supabase Configuration
+supabase:
+  url: ${SUPABASE_URL}
+  anon-key: ${SUPABASE_ANON_KEY}
+  service-key: ${SUPABASE_SERVICE_KEY}
+  jwt-secret: ${SUPABASE_JWT_SECRET}
+
+# Gemini Configuration
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-1.5-flash
+
+# CORS Configuration  
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+# Logging
+logging:
+  level:
+    com.rewind: DEBUG
+    org.springframework.security: DEBUG
