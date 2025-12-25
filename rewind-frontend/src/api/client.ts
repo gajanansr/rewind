@@ -91,6 +91,12 @@ class ApiClient {
         );
     }
 
+    getFeedback(recordingId: string) {
+        return this.request<{ feedback: Array<{ type: string; message: string }> }>(
+            `/recordings/${recordingId}/feedback`
+        );
+    }
+
     // Readiness
     getReadiness() {
         return this.request<ReadinessResponse>('/readiness');

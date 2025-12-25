@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
-type Step = 'start' | 'solve' | 'code' | 'record' | 'done';
+type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
 export default function Solve() {
     const { questionId } = useParams<{ questionId: string }>();
@@ -20,6 +20,8 @@ export default function Solve() {
     const [_recordingId, setRecordingId] = useState<string | null>(null);
     const [aiFeedback, setAiFeedback] = useState<Array<{ type: string; message: string }>>([]);
     const [error, setError] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const recorder = useAudioRecorder();
 
@@ -29,6 +31,19 @@ export default function Solve() {
         queryFn: () => api.getQuestion(questionId!),
         enabled: !!questionId,
     });
+
+    // Fetch question history (previous solutions, recordings)
+    const { data: history, isLoading: historyLoading } = useQuery({
+        queryKey: ['question-history', questionId],
+        queryFn: () => api.getQuestionHistory(questionId!),
+        enabled: !!questionId,
+        retry: false, // Don't retry if user hasn't started this question
+    });
+
+    // Determine if this question was already solved
+    const hasPreviousSolve = history?.userQuestion?.status === 'DONE';
+    const latestSolution = history?.solutions?.[0];
+    const latestRecording = history?.recordings?.[0];
 
     // Start question mutation
     const startMutation = useMutation({
@@ -70,6 +85,7 @@ export default function Solve() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['user-questions'] });
             queryClient.invalidateQueries({ queryKey: ['readiness'] });
+            queryClient.invalidateQueries({ queryKey: ['question-history', questionId] });
             setRecordingId(data.recordingId);
             // Trigger AI analysis
             if (data.recordingId) {
@@ -94,7 +110,6 @@ export default function Solve() {
         },
         onError: (err) => {
             console.error('AI analysis failed:', err);
-            // Set a placeholder message so user knows AI is working
             setAiFeedback([{
                 type: 'HINT',
                 message: 'AI analysis is currently unavailable. The API key may not be configured on the server.'
@@ -103,7 +118,7 @@ export default function Solve() {
     });
 
     // Loading state
-    if (questionLoading || !question) {
+    if (questionLoading || historyLoading || !question) {
         return (
             <div className="page text-center" style={{ paddingTop: 'var(--spacing-2xl)' }}>
                 <div className="text-muted">Loading question...</div>
@@ -122,12 +137,19 @@ export default function Solve() {
         startMutation.mutate();
     };
 
+    const handleSolveAgain = () => {
+        setCode('');
+        setLanguage('python');
+        setLeetcodeLink('');
+        setAiFeedback([]);
+        handleStartSolving();
+    };
+
     const handleSubmitCode = () => {
         setError(null);
         if (userQuestionId) {
             submitSolutionMutation.mutate();
         } else {
-            // Fallback if no userQuestionId (shouldn't happen, but handle gracefully)
             setStep('record');
         }
     };
@@ -137,8 +159,20 @@ export default function Solve() {
         if (userQuestionId && recorder.audioUrl) {
             saveRecordingMutation.mutate();
         } else {
-            // Fallback for demo/testing
             setStep('done');
+        }
+    };
+
+    const handlePlayAudio = (audioUrl: string) => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                audioRef.current.src = audioUrl;
+                audioRef.current.play();
+                setIsPlaying(true);
+            }
         }
     };
 
@@ -146,6 +180,9 @@ export default function Solve() {
 
     return (
         <div className="page">
+            {/* Hidden audio element */}
+            <audio ref={audioRef} onEnded={() => setIsPlaying(false)} style={{ display: 'none' }} />
+
             {/* Error Display */}
             {error && (
                 <div className="card mb-lg" style={{
@@ -166,6 +203,11 @@ export default function Solve() {
                                 {question.difficulty}
                             </span>
                             <span className="badge badge-pattern">{question.pattern.name}</span>
+                            {hasPreviousSolve && (
+                                <span className="badge" style={{ background: 'rgba(34, 197, 94, 0.2)', color: 'var(--color-success)' }}>
+                                    ✓ Solved
+                                </span>
+                            )}
                         </div>
                     </div>
                     <a
@@ -179,8 +221,93 @@ export default function Solve() {
                 </div>
             </div>
 
-            {/* Step: Start */}
-            {step === 'start' && (
+            {/* Previous Solution (if exists) */}
+            {hasPreviousSolve && step === 'start' && (
+                <div className="mb-lg">
+                    {/* Previous Code */}
+                    {latestSolution && (
+                        <div className="card mb-md">
+                            <div className="flex justify-between items-center mb-md">
+                                <h3>📝 Your Previous Solution</h3>
+                                <span className="badge">{latestSolution.language}</span>
+                            </div>
+                            <div style={{
+                                background: '#1a1a2e',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: 'var(--spacing-md)',
+                                overflow: 'auto',
+                                maxHeight: '300px',
+                            }}>
+                                <pre style={{
+                                    margin: 0,
+                                    color: '#e4e4e7',
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                                    fontSize: '13px',
+                                    lineHeight: 1.6,
+                                    whiteSpace: 'pre-wrap',
+                                }}>
+                                    {latestSolution.code}
+                                </pre>
+                            </div>
+                            <p className="text-muted mt-sm" style={{ fontSize: '0.75rem' }}>
+                                Submitted on {new Date(latestSolution.createdAt).toLocaleDateString()}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Previous Recording */}
+                    {latestRecording && (
+                        <div className="card mb-md">
+                            <h3 className="mb-md">🎙️ Your Previous Explanation</h3>
+                            <div className="flex gap-md items-center">
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => handlePlayAudio(latestRecording.audioUrl)}
+                                >
+                                    {isPlaying ? '⏸️ Pause' : '▶️ Play'}
+                                </button>
+                                <span className="text-muted">
+                                    {formatTime(latestRecording.durationSeconds)} • Version {latestRecording.version}
+                                </span>
+                            </div>
+                            {latestRecording.transcript && (
+                                <div className="mt-md" style={{
+                                    background: 'var(--color-bg-tertiary)',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: 'var(--spacing-md)',
+                                }}>
+                                    <p className="text-muted" style={{ fontSize: '0.875rem', margin: 0 }}>
+                                        <strong>Transcript:</strong> {latestRecording.transcript}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* AI Feedback from previous analysis */}
+                    {history?.userQuestion?.id && (
+                        <AIFeedbackSection userQuestionId={history.userQuestion.id} />
+                    )}
+
+                    {/* Actions */}
+                    <div className="card text-center" style={{ padding: 'var(--spacing-xl)' }}>
+                        <h3 className="mb-md">Ready to improve?</h3>
+                        <p className="text-muted mb-lg">
+                            Solve again to reinforce your understanding and improve your explanation.
+                        </p>
+                        <button
+                            className="btn btn-primary btn-lg"
+                            onClick={handleSolveAgain}
+                            disabled={isLoading}
+                        >
+                            🔄 Solve Again
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step: Start (First time) */}
+            {!hasPreviousSolve && step === 'start' && (
                 <div className="card text-center" style={{ padding: 'var(--spacing-2xl)' }}>
                     <h2 className="mb-md">Ready to solve?</h2>
                     <p className="text-muted mb-lg">
@@ -315,60 +442,77 @@ export default function Solve() {
                     <button
                         className="btn btn-primary btn-lg"
                         onClick={handleSubmitCode}
-                        disabled={!code.trim() || isLoading}
+                        disabled={isLoading || !code.trim()}
                     >
-                        {submitSolutionMutation.isPending ? 'Submitting...' : 'Continue to Recording'}
+                        {submitSolutionMutation.isPending ? 'Saving...' : 'Next: Record Explanation'}
                     </button>
                 </div>
             )}
 
-            {/* Step: Record Explanation */}
+            {/* Step: Record */}
             {step === 'record' && (
-                <div className="audio-recorder">
-                    <h2>Explain Your Approach</h2>
-                    <p className="text-muted text-center" style={{ maxWidth: '500px' }}>
-                        Record yourself explaining your solution. Talk about your approach,
-                        time/space complexity, and any edge cases you considered.
+                <div className="card text-center" style={{ padding: 'var(--spacing-2xl)' }}>
+                    <h2 className="mb-md">Record Your Explanation</h2>
+                    <p className="text-muted mb-lg">
+                        Explain your solution out loud. Walk through your thought process,
+                        the approach you took, and why it works.
                     </p>
-
-                    <div className="recording-timer">
-                        {formatTime(recorder.duration)}
-                    </div>
 
                     {!recorder.isRecording && !recorder.audioUrl && (
                         <button
-                            className="record-btn"
+                            className="btn btn-primary btn-lg"
                             onClick={recorder.startRecording}
                         >
-                            <span style={{ fontSize: '2rem' }}>🎙️</span>
+                            🎙️ Start Recording
                         </button>
                     )}
 
                     {recorder.isRecording && (
-                        <button
-                            className="record-btn recording"
-                            onClick={recorder.stopRecording}
-                        >
-                            <span style={{ fontSize: '2rem' }}>⏹️</span>
-                        </button>
+                        <div>
+                            <div style={{
+                                fontSize: '3rem',
+                                fontFamily: 'var(--font-mono)',
+                                marginBottom: 'var(--spacing-md)',
+                                color: 'var(--color-error)',
+                            }}>
+                                ⏺️ {formatTime(recorder.duration)}
+                            </div>
+                            <button
+                                className="btn btn-secondary btn-lg"
+                                onClick={recorder.stopRecording}
+                            >
+                                ⏹️ Stop Recording
+                            </button>
+                        </div>
                     )}
 
-                    {recorder.audioUrl && (
-                        <div className="flex flex-col items-center gap-md">
-                            <audio controls src={recorder.audioUrl} />
+                    {recorder.audioUrl && !recorder.isRecording && (
+                        <div>
+                            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                                <audio
+                                    controls
+                                    src={recorder.audioUrl}
+                                    style={{ maxWidth: '100%' }}
+                                />
+                            </div>
+                            <p className="text-muted mb-md">
+                                Duration: {formatTime(recorder.duration)}
+                            </p>
 
-                            <div className="flex gap-md">
+                            <div className="flex gap-md justify-center mb-lg">
                                 <button
-                                    className="btn btn-secondary"
-                                    onClick={recorder.resetRecording}
+                                    className="btn btn-ghost"
+                                    onClick={recorder.startRecording}
                                 >
                                     Re-record
                                 </button>
                             </div>
 
-                            {/* Confidence Rating */}
-                            <div className="mt-lg text-center">
-                                <p className="text-muted mb-sm">How confident are you in this solution?</p>
+                            {/* Confidence Score */}
+                            <div className="mb-md">
+                                <label className="text-muted mb-sm" style={{ display: 'block' }}>
+                                    How confident are you in your explanation?
+                                </label>
                                 <div className="flex gap-sm justify-center">
                                     {[1, 2, 3, 4, 5].map((score) => (
                                         <button
@@ -474,3 +618,71 @@ export default function Solve() {
     );
 }
 
+// Component to fetch and display AI feedback for a user question
+function AIFeedbackSection({ userQuestionId }: { userQuestionId: string }) {
+    const { data: feedback, isLoading } = useQuery({
+        queryKey: ['ai-feedback', userQuestionId],
+        queryFn: async () => {
+            // Try to get the latest recording for this user question
+            const history = await api.getQuestionHistory(userQuestionId);
+            if (history.recordings?.[0]?.id) {
+                try {
+                    const result = await api.getFeedback(history.recordings[0].id);
+                    return result.feedback || [];
+                } catch {
+                    return [];
+                }
+            }
+            return [];
+        },
+        enabled: !!userQuestionId,
+        retry: false,
+    });
+
+    if (isLoading) {
+        return (
+            <div className="card mb-md text-center">
+                <p className="text-muted">Loading AI feedback...</p>
+            </div>
+        );
+    }
+
+    if (!feedback || feedback.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="card mb-md">
+            <h3 className="mb-md">🤖 AI Feedback</h3>
+            <div className="flex flex-col gap-md">
+                {feedback.map((fb, i) => (
+                    <div key={i} style={{
+                        background: fb.type === 'HINT'
+                            ? 'rgba(59, 130, 246, 0.1)'
+                            : fb.type === 'REFLECTION_QUESTION'
+                                ? 'rgba(139, 92, 246, 0.1)'
+                                : 'rgba(34, 197, 94, 0.1)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 'var(--spacing-md)',
+                    }}>
+                        <div className="flex gap-sm items-center mb-sm">
+                            <span style={{ fontSize: '1.25rem' }}>
+                                {fb.type === 'HINT' && '💡'}
+                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
+                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                            </span>
+                            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                {fb.type === 'HINT' && 'Solution Feedback'}
+                                {fb.type === 'REFLECTION_QUESTION' && 'Reflection Question'}
+                                {fb.type === 'COMMUNICATION_TIP' && 'Communication Tip'}
+                            </span>
+                        </div>
+                        <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                            {fb.message}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
