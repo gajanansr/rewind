@@ -4,6 +4,7 @@ import com.rewind.model.User;
 import com.rewind.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,9 +16,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.security.Key;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.UUID;
@@ -58,14 +59,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userUuid)
                         .orElseGet(() -> createUserFromClaims(userUuid, claims));
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null,
-                        Collections.emptyList());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        user, null, Collections.emptyList());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.debug("Authenticated user: " + userId);
             }
         } catch (Exception e) {
-            logger.error("Cannot authenticate user", e);
+            logger.error("Cannot authenticate user: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
@@ -73,30 +75,50 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private Claims validateToken(String token) {
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
-            Key key = new SecretKeySpec(keyBytes, "HmacSHA256");
+            SecretKey key = getSigningKey();
 
             return Jwts.parser()
-                    .setSigningKey(key)
+                    .verifyWith(key)
                     .build()
-                    .parseClaimsJws(token)
-                    .getBody();
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (Exception e) {
-            logger.error("Invalid JWT token", e);
+            logger.error("Invalid JWT token: " + e.getMessage());
             return null;
         }
     }
 
+    private SecretKey getSigningKey() {
+        // Try to decode as base64 first (Supabase provides base64-encoded secrets)
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (IllegalArgumentException e) {
+            // If not valid base64, use the raw secret bytes
+            return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private User createUserFromClaims(UUID userId, Claims claims) {
         String email = claims.get("email", String.class);
-        String name = claims.get("user_metadata", java.util.Map.class) != null
-                ? (String) ((java.util.Map<?, ?>) claims.get("user_metadata")).get("name")
-                : null;
+
+        // Try to get name from user_metadata or app_metadata
+        String name = null;
+        Object userMetadata = claims.get("user_metadata");
+        if (userMetadata instanceof java.util.Map) {
+            name = (String) ((java.util.Map<String, Object>) userMetadata).get("name");
+            if (name == null) {
+                name = (String) ((java.util.Map<String, Object>) userMetadata).get("full_name");
+            }
+        }
 
         User user = User.builder()
                 .id(userId)
                 .email(email != null ? email : "unknown@example.com")
                 .name(name)
+                .currentReadinessDays(90)
+                .interviewTargetDays(90)
                 .build();
 
         return userRepository.save(user);

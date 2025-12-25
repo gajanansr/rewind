@@ -31,4 +31,7 @@ public interface UserQuestionRepository extends JpaRepository<UserQuestion, UUID
 
     @Query("SELECT COUNT(uq) FROM UserQuestion uq WHERE uq.user.id = :userId AND uq.question.difficulty = :difficulty AND uq.status = 'DONE'")
     long countCompletedByDifficulty(UUID userId, String difficulty);
+
+    @Query("SELECT uq FROM UserQuestion uq WHERE uq.user.id = :userId AND uq.status = 'DONE' AND uq.doneAt >= :since ORDER BY uq.doneAt DESC")
+    List<UserQuestion> findCompletedByUserIdSince(UUID userId, Instant since);
 }

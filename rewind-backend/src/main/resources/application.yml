@@ -37,6 +37,10 @@ gemini:
   api-key: ${GEMINI_API_KEY}
   model: gemini-1.5-flash
 
+# OpenAI Configuration (for Whisper transcription)
+openai:
+  api-key: ${OPENAI_API_KEY:}
+
 # CORS Configuration  
 cors:
   allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
