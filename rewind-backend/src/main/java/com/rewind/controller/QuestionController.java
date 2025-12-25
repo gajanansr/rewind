@@ -27,11 +27,17 @@ public class QuestionController {
             @RequestParam(required = false) UUID patternId) {
         List<Question> questions;
 
-        if (difficulty != null) {
+        if (difficulty != null && patternId != null) {
+            // Both filters applied
+            questions = questionRepository.findByPatternIdAndDifficultyOrderByOrderIndexAsc(patternId, difficulty);
+        } else if (difficulty != null) {
+            // Only difficulty filter
             questions = questionRepository.findByDifficultyOrderByOrderIndexAsc(difficulty);
         } else if (patternId != null) {
+            // Only pattern filter
             questions = questionRepository.findByPatternIdOrderByOrderIndexAsc(patternId);
         } else {
+            // No filters
             questions = questionRepository.findAllByOrderByOrderIndexAsc();
         }
 

@@ -18,6 +18,9 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     @Query("SELECT q FROM Question q WHERE q.pattern.id = :patternId ORDER BY q.orderIndex")
     List<Question> findByPatternIdOrderByOrderIndexAsc(UUID patternId);
 
+    @Query("SELECT q FROM Question q WHERE q.pattern.id = :patternId AND q.difficulty = :difficulty ORDER BY q.orderIndex")
+    List<Question> findByPatternIdAndDifficultyOrderByOrderIndexAsc(UUID patternId, String difficulty);
+
     @Query("SELECT COUNT(q) FROM Question q WHERE q.pattern.id = :patternId")
     long countByPatternId(UUID patternId);
 }

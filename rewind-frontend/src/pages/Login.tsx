@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { supabase } from '../lib/supabase';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+    const [message, setMessage] = useState('');
 
     const setAuth = useAuthStore((state) => state.setAuth);
     const navigate = useNavigate();
@@ -15,24 +18,59 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
         setError('');
+        setMessage('');
 
         try {
-            // In production, this would call Supabase Auth
-            // For now, simulate login with mock token
-            // TODO: Integrate with Supabase Auth
+            if (mode === 'signup') {
+                // Sign up with email and password
+                const { data, error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                });
 
-            const mockUser = {
-                id: 'demo-user-id',
-                email,
-                name: email.split('@')[0],
-            };
+                if (signUpError) throw signUpError;
 
-            const mockToken = 'demo-jwt-token';
+                if (data.user && !data.session) {
+                    // Email confirmation required
+                    setMessage('Check your email to confirm your account!');
+                    return;
+                }
 
-            setAuth(mockUser, mockToken);
-            navigate('/');
+                if (data.session && data.user) {
+                    setAuth(
+                        {
+                            id: data.user.id,
+                            email: data.user.email || email,
+                            name: data.user.email?.split('@')[0],
+                        },
+                        data.session.access_token
+                    );
+                    navigate('/');
+                }
+            } else {
+                // Sign in with email and password
+                const { data, error: signInError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+
+                if (signInError) throw signInError;
+
+                if (data.session && data.user) {
+                    setAuth(
+                        {
+                            id: data.user.id,
+                            email: data.user.email || email,
+                            name: data.user.email?.split('@')[0],
+                        },
+                        data.session.access_token
+                    );
+                    navigate('/');
+                }
+            }
         } catch (err) {
-            setError('Login failed. Please try again.');
+            const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -73,6 +111,18 @@ export default function Login() {
                     </div>
                 )}
 
+                {message && (
+                    <div style={{
+                        padding: 'var(--spacing-md)',
+                        background: 'rgba(34, 197, 94, 0.15)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--color-success)',
+                        marginBottom: 'var(--spacing-md)'
+                    }}>
+                        {message}
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit}>
                     <div className="mb-md">
                         <label style={{
@@ -109,6 +159,7 @@ export default function Login() {
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
                             required
+                            minLength={6}
                         />
                     </div>
 
@@ -118,14 +169,49 @@ export default function Login() {
                         style={{ width: '100%' }}
                         disabled={isLoading}
                     >
-                        {isLoading ? 'Signing in...' : 'Sign In'}
+                        {isLoading ? (mode === 'signup' ? 'Creating account...' : 'Signing in...') : (mode === 'signup' ? 'Create Account' : 'Sign In')}
                     </button>
                 </form>
 
                 <p className="text-center text-muted mt-lg" style={{ fontSize: '0.875rem' }}>
-                    Demo mode: Enter any email/password to continue
+                    {mode === 'signin' ? (
+                        <>
+                            Don't have an account?{' '}
+                            <button
+                                type="button"
+                                onClick={() => { setMode('signup'); setError(''); setMessage(''); }}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--color-accent)',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                Sign up
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            Already have an account?{' '}
+                            <button
+                                type="button"
+                                onClick={() => { setMode('signin'); setError(''); setMessage(''); }}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--color-accent)',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                Sign in
+                            </button>
+                        </>
+                    )}
                 </p>
             </div>
         </div>
     );
 }
+
