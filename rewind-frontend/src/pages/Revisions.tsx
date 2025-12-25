@@ -1,16 +1,33 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { RevisionScheduleResponse } from '../api/client';
 
 export default function Revisions() {
     const [selectedRevision, setSelectedRevision] = useState<RevisionScheduleResponse | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const { data: revisions = [], isLoading } = useQuery({
         queryKey: ['revisions-today'],
         queryFn: () => api.getTodayRevisions(),
         retry: false,
+    });
+
+    // Complete revision mutation
+    const completeMutation = useMutation({
+        mutationFn: (scheduleId: string) => api.completeRevision(scheduleId, {
+            listenedVersion: selectedRevision?.lastRecording?.version || 1,
+            rerecorded: false,
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['revisions-today'] });
+            queryClient.invalidateQueries({ queryKey: ['readiness'] });
+            setSelectedRevision(null);
+        },
     });
 
     const getReasonLabel = (reason: string) => {
@@ -22,6 +39,31 @@ export default function Revisions() {
         }
     };
 
+    const handlePlayPause = (e: React.MouseEvent, audioUrl?: string) => {
+        e.stopPropagation();
+        if (audioRef.current && audioUrl) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.src = audioUrl;
+                audioRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        } else {
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleReRecord = (e: React.MouseEvent, questionId: string) => {
+        e.stopPropagation();
+        navigate(`/solve/${questionId}`);
+    };
+
+    const handleMarkReviewed = (e: React.MouseEvent, scheduleId: string) => {
+        e.stopPropagation();
+        completeMutation.mutate(scheduleId);
+    };
+
     return (
         <div className="page">
             <h1 className="mb-lg">Today's Revisions</h1>
@@ -30,6 +72,13 @@ export default function Revisions() {
                 Listen to your past explanations and reinforce your understanding.
                 Re-record if you can explain it better now.
             </p>
+
+            {/* Hidden audio element for playback */}
+            <audio
+                ref={audioRef}
+                onEnded={() => setIsPlaying(false)}
+                style={{ display: 'none' }}
+            />
 
             {isLoading ? (
                 <div className="text-center text-muted">Loading revisions...</div>
@@ -84,48 +133,43 @@ export default function Revisions() {
                                 <div className="mt-lg" style={{ borderTop: '1px solid var(--color-bg-tertiary)', paddingTop: 'var(--spacing-lg)' }}>
                                     <h4 className="mb-md">Listen to your explanation</h4>
 
-                                    {/* Audio player placeholder */}
-                                    <div className="flex items-center gap-md mb-lg" style={{
-                                        background: 'var(--color-bg-secondary)',
-                                        padding: 'var(--spacing-md)',
-                                        borderRadius: 'var(--radius-md)'
-                                    }}>
-                                        <button
-                                            className="btn btn-primary btn-icon"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setIsPlaying(!isPlaying);
-                                            }}
-                                        >
-                                            {isPlaying ? '⏸️' : '▶️'}
-                                        </button>
-                                        <div className="progress-bar" style={{ flex: 1 }}>
-                                            <div className="progress-bar-fill" style={{ width: isPlaying ? '30%' : '0%' }} />
+                                    {/* Audio player */}
+                                    {revision.lastRecording?.audioUrl ? (
+                                        <div className="flex items-center gap-md mb-lg" style={{
+                                            background: 'var(--color-bg-secondary)',
+                                            padding: 'var(--spacing-md)',
+                                            borderRadius: 'var(--radius-md)'
+                                        }}>
+                                            <button
+                                                className="btn btn-primary btn-icon"
+                                                onClick={(e) => handlePlayPause(e, revision.lastRecording?.audioUrl)}
+                                            >
+                                                {isPlaying ? '⏸️' : '▶️'}
+                                            </button>
+                                            <div className="progress-bar" style={{ flex: 1 }}>
+                                                <div className="progress-bar-fill" style={{ width: isPlaying ? '30%' : '0%' }} />
+                                            </div>
+                                            <span className="text-muted" style={{ fontSize: '0.875rem' }}>
+                                                Version {revision.lastRecording?.version}
+                                            </span>
                                         </div>
-                                        <span className="text-muted" style={{ fontSize: '0.875rem' }}>
-                                            Version {revision.lastRecording?.version}
-                                        </span>
-                                    </div>
+                                    ) : (
+                                        <p className="text-muted mb-lg">No recording available</p>
+                                    )}
 
                                     <div className="flex gap-md">
                                         <button
                                             className="btn btn-secondary"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                // TODO: Open re-record flow
-                                            }}
+                                            onClick={(e) => handleReRecord(e, revision.question.id)}
                                         >
                                             Re-record Explanation
                                         </button>
                                         <button
                                             className="btn btn-primary"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                // In production: call completeMutation.mutate(revision.scheduleId)
-                                                setSelectedRevision(null);
-                                            }}
+                                            onClick={(e) => handleMarkReviewed(e, revision.scheduleId)}
+                                            disabled={completeMutation.isPending}
                                         >
-                                            Mark as Reviewed ✓
+                                            {completeMutation.isPending ? 'Saving...' : 'Mark as Reviewed ✓'}
                                         </button>
                                     </div>
                                 </div>
@@ -137,3 +181,4 @@ export default function Revisions() {
         </div>
     );
 }
+

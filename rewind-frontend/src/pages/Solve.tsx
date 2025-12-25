@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 
@@ -9,6 +9,7 @@ type Step = 'start' | 'solve' | 'code' | 'record' | 'done';
 export default function Solve() {
     const { questionId } = useParams<{ questionId: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const [step, setStep] = useState<Step>('start');
     const [code, setCode] = useState('');
@@ -16,6 +17,7 @@ export default function Solve() {
     const [leetcodeLink, setLeetcodeLink] = useState('');
     const [confidenceScore, setConfidenceScore] = useState<number>(3);
     const [userQuestionId, setUserQuestionId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const recorder = useAudioRecorder();
 
@@ -24,6 +26,53 @@ export default function Solve() {
         queryKey: ['question', questionId],
         queryFn: () => api.getQuestion(questionId!),
         enabled: !!questionId,
+    });
+
+    // Start question mutation
+    const startMutation = useMutation({
+        mutationFn: () => api.startQuestion(questionId!),
+        onSuccess: (data) => {
+            setUserQuestionId(data.id);
+            setStep('solve');
+            window.open(question?.leetcodeUrl, '_blank');
+        },
+        onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Failed to start question');
+        },
+    });
+
+    // Submit solution mutation
+    const submitSolutionMutation = useMutation({
+        mutationFn: () => api.submitSolution({
+            userQuestionId: userQuestionId!,
+            code,
+            language,
+            leetcodeSubmissionLink: leetcodeLink || undefined,
+        }),
+        onSuccess: () => {
+            setStep('record');
+        },
+        onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Failed to submit solution');
+        },
+    });
+
+    // Save recording mutation
+    const saveRecordingMutation = useMutation({
+        mutationFn: () => api.saveRecording({
+            userQuestionId: userQuestionId!,
+            audioUrl: recorder.audioUrl || '',
+            durationSeconds: recorder.duration,
+            confidenceScore,
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['user-questions'] });
+            queryClient.invalidateQueries({ queryKey: ['readiness'] });
+            setStep('done');
+        },
+        onError: (err) => {
+            setError(err instanceof Error ? err.message : 'Failed to save recording');
+        },
     });
 
     // Loading state
@@ -41,8 +90,45 @@ export default function Solve() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const handleStartSolving = () => {
+        setError(null);
+        startMutation.mutate();
+    };
+
+    const handleSubmitCode = () => {
+        setError(null);
+        if (userQuestionId) {
+            submitSolutionMutation.mutate();
+        } else {
+            // Fallback if no userQuestionId (shouldn't happen, but handle gracefully)
+            setStep('record');
+        }
+    };
+
+    const handleSaveRecording = () => {
+        setError(null);
+        if (userQuestionId && recorder.audioUrl) {
+            saveRecordingMutation.mutate();
+        } else {
+            // Fallback for demo/testing
+            setStep('done');
+        }
+    };
+
+    const isLoading = startMutation.isPending || submitSolutionMutation.isPending || saveRecordingMutation.isPending;
+
     return (
         <div className="page">
+            {/* Error Display */}
+            {error && (
+                <div className="card mb-lg" style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    borderColor: 'var(--color-error)',
+                }}>
+                    <p style={{ color: 'var(--color-error)', margin: 0 }}>{error}</p>
+                </div>
+            )}
+
             {/* Question Header */}
             <div className="card mb-lg">
                 <div className="flex justify-between items-center">
@@ -75,14 +161,10 @@ export default function Solve() {
                     </p>
                     <button
                         className="btn btn-primary btn-lg"
-                        onClick={() => {
-                            // In production: call startMutation.mutate()
-                            setUserQuestionId('mock-uq-id');
-                            setStep('solve');
-                            window.open(question.leetcodeUrl, '_blank');
-                        }}
+                        onClick={handleStartSolving}
+                        disabled={isLoading}
                     >
-                        Start Solving
+                        {startMutation.isPending ? 'Starting...' : 'Start Solving'}
                     </button>
                 </div>
             )}
@@ -155,13 +237,10 @@ export default function Solve() {
 
                     <button
                         className="btn btn-primary btn-lg"
-                        onClick={() => {
-                            // In production: call submitSolutionMutation.mutate()
-                            setStep('record');
-                        }}
-                        disabled={!code.trim()}
+                        onClick={handleSubmitCode}
+                        disabled={!code.trim() || isLoading}
                     >
-                        Continue to Recording
+                        {submitSolutionMutation.isPending ? 'Submitting...' : 'Continue to Recording'}
                     </button>
                 </div>
             )}
@@ -232,12 +311,10 @@ export default function Solve() {
 
                             <button
                                 className="btn btn-primary btn-lg mt-md"
-                                onClick={() => {
-                                    // In production: call saveRecordingMutation.mutate()
-                                    setStep('done');
-                                }}
+                                onClick={handleSaveRecording}
+                                disabled={isLoading}
                             >
-                                Save & Complete
+                                {saveRecordingMutation.isPending ? 'Saving...' : 'Save & Complete'}
                             </button>
                         </div>
                     )}
@@ -277,3 +354,4 @@ export default function Solve() {
         </div>
     );
 }
+

@@ -36,7 +36,7 @@ function Navigation() {
   return (
     <nav className="nav">
       <NavLink to="/" className="nav-logo">
-        🔄 <span>Rewind</span>
+        Rewind
       </NavLink>
 
       <div className="nav-links">
