@@ -17,6 +17,8 @@ export default function Solve() {
     const [leetcodeLink, setLeetcodeLink] = useState('');
     const [confidenceScore, setConfidenceScore] = useState<number>(3);
     const [userQuestionId, setUserQuestionId] = useState<string | null>(null);
+    const [_recordingId, setRecordingId] = useState<string | null>(null);
+    const [aiFeedback, setAiFeedback] = useState<Array<{ type: string; message: string }>>([]);
     const [error, setError] = useState<string | null>(null);
 
     const recorder = useAudioRecorder();
@@ -65,13 +67,32 @@ export default function Solve() {
             durationSeconds: recorder.duration,
             confidenceScore,
         }),
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['user-questions'] });
             queryClient.invalidateQueries({ queryKey: ['readiness'] });
+            setRecordingId(data.recordingId);
+            // Trigger AI analysis
+            if (data.recordingId) {
+                analyzeMutation.mutate(data.recordingId);
+            }
             setStep('done');
         },
         onError: (err) => {
             setError(err instanceof Error ? err.message : 'Failed to save recording');
+        },
+    });
+
+    // Analyze recording for AI feedback
+    const analyzeMutation = useMutation({
+        mutationFn: (recId: string) => api.request<{ feedback: Array<{ type: string; message: string }> }>(
+            `/recordings/${recId}/analyze`,
+            { method: 'POST' }
+        ),
+        onSuccess: (data) => {
+            setAiFeedback(data.feedback || []);
+        },
+        onError: () => {
+            // Silently fail - AI feedback is optional
         },
     });
 
@@ -334,6 +355,48 @@ export default function Solve() {
                         Great job! Your solution and explanation have been saved.
                         You'll be reminded to review this in a few days.
                     </p>
+
+                    {/* AI Feedback Section */}
+                    {analyzeMutation.isPending && (
+                        <div className="text-muted mb-lg">
+                            <span>🤖 Analyzing your solution...</span>
+                        </div>
+                    )}
+
+                    {aiFeedback.length > 0 && (
+                        <div className="mb-lg" style={{ textAlign: 'left' }}>
+                            <h3 className="mb-md" style={{ textAlign: 'center' }}>🤖 AI Feedback</h3>
+                            <div className="flex flex-col gap-md">
+                                {aiFeedback.map((fb, i) => (
+                                    <div key={i} className="card" style={{
+                                        background: fb.type === 'HINT'
+                                            ? 'rgba(59, 130, 246, 0.1)'
+                                            : fb.type === 'REFLECTION_QUESTION'
+                                                ? 'rgba(139, 92, 246, 0.1)'
+                                                : 'rgba(34, 197, 94, 0.1)',
+                                        border: 'none',
+                                        padding: 'var(--spacing-md)',
+                                    }}>
+                                        <div className="flex gap-sm items-center mb-sm">
+                                            <span style={{ fontSize: '1.25rem' }}>
+                                                {fb.type === 'HINT' && '💡'}
+                                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
+                                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                                            </span>
+                                            <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                                {fb.type === 'HINT' && 'Solution Feedback'}
+                                                {fb.type === 'REFLECTION_QUESTION' && 'Reflection Question'}
+                                                {fb.type === 'COMMUNICATION_TIP' && 'Communication Tip'}
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                                            {fb.message}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex gap-md justify-center">
                         <button

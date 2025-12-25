@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 
 export default function Dashboard() {
-    const { data: readiness, isLoading } = useQuery({
+    const { data: readiness, isLoading: _isLoading } = useQuery({
         queryKey: ['readiness'],
         queryFn: () => api.getReadiness(),
         retry: false, // Don't retry if not authenticated

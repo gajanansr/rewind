@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Questions from './pages/Questions';
 import Solve from './pages/Solve';
 import Revisions from './pages/Revisions';
+import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import './styles/index.css';
 
@@ -49,6 +50,9 @@ function Navigation() {
         <NavLink to="/revisions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Revisions
         </NavLink>
+        <NavLink to="/analytics" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Analytics
+        </NavLink>
         <button onClick={logout} className="btn btn-ghost">
           Logout
         </button>
@@ -88,6 +92,12 @@ function App() {
             <Route path="/revisions" element={
               <ProtectedRoute>
                 <Revisions />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
               </ProtectedRoute>
             } />
           </Routes>
