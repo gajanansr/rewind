@@ -18,110 +18,121 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserQuestionController {
 
-    private final UserQuestionService userQuestionService;
-    private final UserQuestionRepository userQuestionRepository;
-    private final SolutionRepository solutionRepository;
-    private final ExplanationRecordingRepository recordingRepository;
+        private final UserQuestionService userQuestionService;
+        private final UserQuestionRepository userQuestionRepository;
+        private final SolutionRepository solutionRepository;
+        private final ExplanationRecordingRepository recordingRepository;
 
-    @GetMapping
-    public ResponseEntity<List<UserQuestionResponse>> getMyQuestions(
-            @AuthenticationPrincipal User user) {
-        List<UserQuestion> questions = userQuestionRepository.findByUserId(user.getId());
-        List<UserQuestionResponse> response = questions.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        @GetMapping
+        public ResponseEntity<List<UserQuestionResponse>> getMyQuestions(
+                        @AuthenticationPrincipal User user) {
+                List<UserQuestion> questions = userQuestionRepository.findByUserId(user.getId());
+                List<UserQuestionResponse> response = questions.stream()
+                                .map(this::toResponse)
+                                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/{questionId}/start")
-    public ResponseEntity<UserQuestionResponse> startQuestion(
-            @AuthenticationPrincipal User user,
-            @PathVariable UUID questionId) {
-        UserQuestion uq = userQuestionService.startQuestion(user, questionId);
-        return ResponseEntity.ok(toResponse(uq));
-    }
-
-    @GetMapping("/{questionId}/history")
-    public ResponseEntity<QuestionHistoryResponse> getQuestionHistory(
-            @AuthenticationPrincipal User user,
-            @PathVariable UUID questionId) {
-        UserQuestion uq = userQuestionService.getProgress(user, questionId);
-        if (uq == null) {
-            return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(response);
         }
 
-        List<SolutionResponse> solutions = solutionRepository
-                .findByUserQuestionIdOrderByCreatedAtDesc(uq.getId())
-                .stream()
-                .map(this::toSolutionResponse)
-                .collect(Collectors.toList());
+        @PostMapping("/{questionId}/start")
+        public ResponseEntity<UserQuestionResponse> startQuestion(
+                        @AuthenticationPrincipal User user,
+                        @PathVariable UUID questionId) {
+                UserQuestion uq = userQuestionService.startQuestion(user, questionId);
+                return ResponseEntity.ok(toResponse(uq));
+        }
 
-        List<RecordingResponse> recordings = recordingRepository
-                .findByUserQuestionIdOrderByVersionDesc(uq.getId())
-                .stream()
-                .map(this::toRecordingResponse)
-                .collect(Collectors.toList());
+        @GetMapping("/{questionId}/history")
+        public ResponseEntity<QuestionHistoryResponse> getQuestionHistory(
+                        @AuthenticationPrincipal User user,
+                        @PathVariable UUID questionId) {
 
-        return ResponseEntity.ok(QuestionHistoryResponse.builder()
-                .userQuestion(toResponse(uq))
-                .solutions(solutions)
-                .recordings(recordings)
-                .build());
-    }
+                // Check if user is authenticated
+                if (user == null) {
+                        return ResponseEntity.status(401).build();
+                }
 
-    private UserQuestionResponse toResponse(UserQuestion uq) {
-        Question q = uq.getQuestion();
-        return UserQuestionResponse.builder()
-                .id(uq.getId())
-                .questionId(q.getId())
-                .status(uq.getStatus().name())
-                .confidenceScore(uq.getConfidenceScore())
-                .startedAt(uq.getStartedAt())
-                .solvedDurationSeconds(uq.getSolvedDurationSeconds())
-                .doneAt(uq.getDoneAt())
-                .question(QuestionResponse.builder()
-                        .id(q.getId())
-                        .title(q.getTitle())
-                        .difficulty(q.getDifficulty())
-                        .leetcodeUrl(q.getLeetcodeUrl())
-                        .timeMinutes(q.getTimeMinutes())
-                        .orderIndex(q.getOrderIndex())
-                        .pattern(PatternInfo.builder()
-                                .id(q.getPattern().getId())
-                                .name(q.getPattern().getName())
-                                .build())
-                        .build())
-                .build();
-    }
+                UserQuestion uq = userQuestionService.getProgress(user, questionId);
+                if (uq == null) {
+                        // Return empty response instead of 404 for unsolved questions
+                        return ResponseEntity.ok(QuestionHistoryResponse.builder()
+                                        .userQuestion(null)
+                                        .solutions(List.of())
+                                        .recordings(List.of())
+                                        .build());
+                }
 
-    private SolutionResponse toSolutionResponse(Solution s) {
-        return SolutionResponse.builder()
-                .id(s.getId())
-                .code(s.getCode())
-                .language(s.getLanguage())
-                .leetcodeSubmissionLink(s.getLeetcodeSubmissionLink())
-                .isOptimal(s.getIsOptimal())
-                .createdAt(s.getCreatedAt())
-                .build();
-    }
+                List<SolutionResponse> solutions = solutionRepository
+                                .findByUserQuestionIdOrderByCreatedAtDesc(uq.getId())
+                                .stream()
+                                .map(this::toSolutionResponse)
+                                .collect(Collectors.toList());
 
-    private RecordingResponse toRecordingResponse(ExplanationRecording r) {
-        return RecordingResponse.builder()
-                .id(r.getId())
-                .audioUrl(r.getAudioUrl())
-                .transcript(r.getTranscript())
-                .durationSeconds(r.getDurationSeconds())
-                .version(r.getVersion())
-                .recordedAt(r.getRecordedAt())
-                .build();
-    }
+                List<RecordingResponse> recordings = recordingRepository
+                                .findByUserQuestionIdOrderByVersionDesc(uq.getId())
+                                .stream()
+                                .map(this::toRecordingResponse)
+                                .collect(Collectors.toList());
 
-    @lombok.Data
-    @lombok.Builder
-    public static class QuestionHistoryResponse {
-        private UserQuestionResponse userQuestion;
-        private List<SolutionResponse> solutions;
-        private List<RecordingResponse> recordings;
-    }
+                return ResponseEntity.ok(QuestionHistoryResponse.builder()
+                                .userQuestion(toResponse(uq))
+                                .solutions(solutions)
+                                .recordings(recordings)
+                                .build());
+        }
+
+        private UserQuestionResponse toResponse(UserQuestion uq) {
+                Question q = uq.getQuestion();
+                return UserQuestionResponse.builder()
+                                .id(uq.getId())
+                                .questionId(q.getId())
+                                .status(uq.getStatus().name())
+                                .confidenceScore(uq.getConfidenceScore())
+                                .startedAt(uq.getStartedAt())
+                                .solvedDurationSeconds(uq.getSolvedDurationSeconds())
+                                .doneAt(uq.getDoneAt())
+                                .question(QuestionResponse.builder()
+                                                .id(q.getId())
+                                                .title(q.getTitle())
+                                                .difficulty(q.getDifficulty())
+                                                .leetcodeUrl(q.getLeetcodeUrl())
+                                                .timeMinutes(q.getTimeMinutes())
+                                                .orderIndex(q.getOrderIndex())
+                                                .pattern(PatternInfo.builder()
+                                                                .id(q.getPattern().getId())
+                                                                .name(q.getPattern().getName())
+                                                                .build())
+                                                .build())
+                                .build();
+        }
+
+        private SolutionResponse toSolutionResponse(Solution s) {
+                return SolutionResponse.builder()
+                                .id(s.getId())
+                                .code(s.getCode())
+                                .language(s.getLanguage())
+                                .leetcodeSubmissionLink(s.getLeetcodeSubmissionLink())
+                                .isOptimal(s.getIsOptimal())
+                                .createdAt(s.getCreatedAt())
+                                .build();
+        }
+
+        private RecordingResponse toRecordingResponse(ExplanationRecording r) {
+                return RecordingResponse.builder()
+                                .id(r.getId())
+                                .audioUrl(r.getAudioUrl())
+                                .transcript(r.getTranscript())
+                                .durationSeconds(r.getDurationSeconds())
+                                .version(r.getVersion())
+                                .recordedAt(r.getRecordedAt())
+                                .build();
+        }
+
+        @lombok.Data
+        @lombok.Builder
+        public static class QuestionHistoryResponse {
+                private UserQuestionResponse userQuestion;
+                private List<SolutionResponse> solutions;
+                private List<RecordingResponse> recordings;
+        }
 }
