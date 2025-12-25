@@ -54,18 +54,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+        String requestUri = request.getRequestURI();
+
+        logger.info("JWT Filter processing: " + requestUri);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.debug("No Authorization header for: " + requestUri);
             filterChain.doFilter(request, response);
             return;
         }
 
+        logger.info("Processing token for: " + requestUri);
+
         try {
             String token = authHeader.substring(7);
+            logger.debug("Token length: " + token.length());
+
             Claims claims = validateToken(token);
 
             if (claims != null) {
                 String userId = claims.getSubject();
+                logger.info("Token validated for user: " + userId);
                 UUID userUuid = UUID.fromString(userId);
 
                 User user = userRepository.findById(userUuid)
@@ -76,10 +85,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.debug("Authenticated user: " + userId);
+                logger.info("Authenticated user: " + userId + " for " + requestUri);
+            } else {
+                logger.warn("Token validation returned null for: " + requestUri);
             }
         } catch (Exception e) {
-            logger.error("Cannot authenticate user: " + e.getMessage());
+            logger.error("Cannot authenticate user for " + requestUri + ": " + e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);
