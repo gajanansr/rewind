@@ -55,9 +55,10 @@ public class ReadinessService {
         // Pace bonus (1.0 - 1.2)
         double paceBonus = calculatePaceBonus(user);
 
-        // Final calculation
+        // Final calculation - use round, not ceil, but ensure at least some progress
+        // for Hard questions
         double daysReduced = baseValue * difficultyMultiplier * patternWeight * paceBonus;
-        int roundedDays = (int) Math.ceil(daysReduced);
+        int roundedDays = (int) Math.max(0, Math.round(daysReduced));
 
         // Update user's readiness
         int newDays = Math.max(0, user.getCurrentReadinessDays() - roundedDays);
@@ -86,7 +87,7 @@ public class ReadinessService {
             default -> REVISION_EASY_BONUS;
         };
 
-        int roundedDays = (int) Math.ceil(bonus);
+        int roundedDays = (int) Math.max(0, Math.round(bonus));
         int newDays = Math.max(0, user.getCurrentReadinessDays() - roundedDays);
         user.setCurrentReadinessDays(newDays);
         userRepository.save(user);

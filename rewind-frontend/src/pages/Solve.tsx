@@ -89,10 +89,16 @@ export default function Solve() {
             { method: 'POST' }
         ),
         onSuccess: (data) => {
+            console.log('AI Feedback received:', data);
             setAiFeedback(data.feedback || []);
         },
-        onError: () => {
-            // Silently fail - AI feedback is optional
+        onError: (err) => {
+            console.error('AI analysis failed:', err);
+            // Set a placeholder message so user knows AI is working
+            setAiFeedback([{
+                type: 'HINT',
+                message: 'AI analysis is currently unavailable. The API key may not be configured on the server.'
+            }]);
         },
     });
 
@@ -234,13 +240,63 @@ export default function Solve() {
                         <label className="text-muted" style={{ display: 'block', marginBottom: 'var(--spacing-xs)' }}>
                             Solution Code
                         </label>
-                        <textarea
-                            className="input"
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            placeholder="Paste your solution code here..."
-                            style={{ fontFamily: 'var(--font-mono)', minHeight: '200px' }}
-                        />
+                        <div style={{
+                            position: 'relative',
+                            background: '#1a1a2e',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-bg-tertiary)',
+                            overflow: 'hidden',
+                        }}>
+                            {/* Language badge */}
+                            <div style={{
+                                position: 'absolute',
+                                top: '8px',
+                                right: '12px',
+                                background: 'rgba(59, 130, 246, 0.2)',
+                                color: 'var(--color-accent)',
+                                padding: '2px 10px',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                textTransform: 'uppercase',
+                                zIndex: 1,
+                            }}>
+                                {language}
+                            </div>
+
+                            {/* Code editor */}
+                            <textarea
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                placeholder="// Paste your solution code here..."
+                                spellCheck={false}
+                                style={{
+                                    width: '100%',
+                                    minHeight: '300px',
+                                    padding: '16px 60px 16px 16px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    outline: 'none',
+                                    color: '#e4e4e7',
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+                                    fontSize: '14px',
+                                    lineHeight: '1.6',
+                                    resize: 'vertical',
+                                    tabSize: 4,
+                                }}
+                            />
+
+                            {/* Line count indicator */}
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '8px',
+                                left: '12px',
+                                color: 'var(--color-text-muted)',
+                                fontSize: '0.75rem',
+                            }}>
+                                {code.split('\n').length} lines
+                            </div>
+                        </div>
                     </div>
 
                     <div className="mb-lg">
