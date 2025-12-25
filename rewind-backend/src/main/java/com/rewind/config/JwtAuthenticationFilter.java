@@ -4,7 +4,6 @@ import com.rewind.model.User;
 import com.rewind.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,20 +15,34 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.UUID;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.security.KeyFactory;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.util.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Value("${supabase.jwt-secret}")
-    private String jwtSecret;
+    @Value("${supabase.url}")
+    private String supabaseUrl;
 
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private ECPublicKey cachedPublicKey;
+    private long cacheExpiry = 0;
+    private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
     public JwtAuthenticationFilter(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -55,7 +68,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userId = claims.getSubject();
                 UUID userUuid = UUID.fromString(userId);
 
-                // Get or create user in our database
                 User user = userRepository.findById(userUuid)
                         .orElseGet(() -> createUserFromClaims(userUuid, claims));
 
@@ -75,10 +87,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private Claims validateToken(String token) {
         try {
-            SecretKey key = getSigningKey();
+            ECPublicKey publicKey = getPublicKey();
+            if (publicKey == null) {
+                logger.error("Could not get public key from Supabase");
+                return null;
+            }
 
             return Jwts.parser()
-                    .verifyWith(key)
+                    .verifyWith(publicKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
@@ -88,14 +104,73 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private SecretKey getSigningKey() {
-        // Try to decode as base64 first (Supabase provides base64-encoded secrets)
+    private ECPublicKey getPublicKey() {
+        // Use cached key if still valid
+        if (cachedPublicKey != null && System.currentTimeMillis() < cacheExpiry) {
+            return cachedPublicKey;
+        }
+
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
-            return Keys.hmacShaKeyFor(keyBytes);
-        } catch (IllegalArgumentException e) {
-            // If not valid base64, use the raw secret bytes
-            return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            // Fetch JWKS from Supabase
+            String jwksUrl = supabaseUrl + "/auth/v1/.well-known/jwks.json";
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(jwksUrl))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                logger.error("Failed to fetch JWKS: " + response.statusCode());
+                return null;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jwks = objectMapper.readValue(response.body(), Map.class);
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> keys = (List<Map<String, Object>>) jwks.get("keys");
+
+            if (keys == null || keys.isEmpty()) {
+                logger.error("No keys found in JWKS");
+                return null;
+            }
+
+            // Get the first key (signing key)
+            Map<String, Object> key = keys.get(0);
+            String kty = (String) key.get("kty");
+
+            if (!"EC".equals(kty)) {
+                logger.error("Unexpected key type: " + kty);
+                return null;
+            }
+
+            String xStr = (String) key.get("x");
+            String yStr = (String) key.get("y");
+
+            byte[] xBytes = Base64.getUrlDecoder().decode(xStr);
+            byte[] yBytes = Base64.getUrlDecoder().decode(yStr);
+
+            BigInteger x = new BigInteger(1, xBytes);
+            BigInteger y = new BigInteger(1, yBytes);
+
+            // P-256 curve parameters
+            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            java.security.spec.ECGenParameterSpec ecSpec = new java.security.spec.ECGenParameterSpec("secp256r1");
+            java.security.AlgorithmParameters params = java.security.AlgorithmParameters.getInstance("EC");
+            params.init(ecSpec);
+            ECParameterSpec ecParams = params.getParameterSpec(ECParameterSpec.class);
+
+            ECPoint point = new ECPoint(x, y);
+            ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, ecParams);
+            cachedPublicKey = (ECPublicKey) keyFactory.generatePublic(pubKeySpec);
+            cacheExpiry = System.currentTimeMillis() + CACHE_DURATION_MS;
+
+            logger.info("Successfully fetched and cached Supabase public key");
+            return cachedPublicKey;
+
+        } catch (Exception e) {
+            logger.error("Error fetching public key: " + e.getMessage());
+            return null;
         }
     }
 
@@ -103,13 +178,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private User createUserFromClaims(UUID userId, Claims claims) {
         String email = claims.get("email", String.class);
 
-        // Try to get name from user_metadata or app_metadata
         String name = null;
         Object userMetadata = claims.get("user_metadata");
-        if (userMetadata instanceof java.util.Map) {
-            name = (String) ((java.util.Map<String, Object>) userMetadata).get("name");
+        if (userMetadata instanceof Map) {
+            name = (String) ((Map<String, Object>) userMetadata).get("name");
             if (name == null) {
-                name = (String) ((java.util.Map<String, Object>) userMetadata).get("full_name");
+                name = (String) ((Map<String, Object>) userMetadata).get("full_name");
             }
         }
 
