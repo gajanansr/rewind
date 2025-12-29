@@ -347,6 +347,33 @@ textarea.input {
   color: var(--color-error);
 }
 
+.target-date {
+  font-size: 2.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-accent), #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  margin-bottom: var(--spacing-xs);
+}
+
+.days-remaining {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  margin-bottom: var(--spacing-md);
+}
+
+.speed-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
+}
+
 /* ===== QUESTION LIST ===== */
 .question-list {
   display: flex;
@@ -369,6 +396,37 @@ textarea.input {
 .question-item:hover {
   border-color: var(--color-accent);
   transform: translateX(4px);
+}
+
+/* Skeleton loading states */
+.question-item.skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.question-item.skeleton:hover {
+  transform: none;
+  border-color: var(--color-bg-tertiary);
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg,
+      var(--color-bg-tertiary) 25%,
+      var(--color-bg-secondary) 50%,
+      var(--color-bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .question-number {

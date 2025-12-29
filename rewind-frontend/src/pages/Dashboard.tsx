@@ -1,6 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 
+// Question distribution in the 169-question set
+const TOTAL_QUESTIONS = 169;
+const EASY_TOTAL = 46;
+const MEDIUM_TOTAL = 92;
+const HARD_TOTAL = 31;
+
+// Day reduction per question solved
+const EASY_DAY_REDUCTION = 0.28;
+const MEDIUM_DAY_REDUCTION = 0.56;
+const HARD_DAY_REDUCTION = 0.83;
+
+// Total days that can be reduced (should sum to ~90)
+const TOTAL_POSSIBLE_REDUCTION =
+    (EASY_TOTAL * EASY_DAY_REDUCTION) +
+    (MEDIUM_TOTAL * MEDIUM_DAY_REDUCTION) +
+    (HARD_TOTAL * HARD_DAY_REDUCTION);
+
 export default function Dashboard() {
     const { data: readiness, isLoading: _isLoading } = useQuery({
         queryKey: ['readiness'],
@@ -22,7 +39,7 @@ export default function Dashboard() {
         trend: 'STABLE' as const,
         breakdown: {
             questionsSolved: 0,
-            questionsTotal: 169,
+            questionsTotal: TOTAL_QUESTIONS,
             easyComplete: 0,
             mediumComplete: 0,
             hardComplete: 0,
@@ -32,16 +49,50 @@ export default function Dashboard() {
         recentEvents: [],
     };
 
+    // Calculate weighted progress based on day reductions
+    const easyDaysReduced = displayData.breakdown.easyComplete * EASY_DAY_REDUCTION;
+    const mediumDaysReduced = displayData.breakdown.mediumComplete * MEDIUM_DAY_REDUCTION;
+    const hardDaysReduced = displayData.breakdown.hardComplete * HARD_DAY_REDUCTION;
+    const totalDaysReduced = easyDaysReduced + mediumDaysReduced + hardDaysReduced;
+    const weightedProgress = Math.min(100, (totalDaysReduced / TOTAL_POSSIBLE_REDUCTION) * 100);
+
+    // Calculate target date
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + displayData.daysRemaining);
+    const formattedDate = targetDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    });
+
+    // Speed message based on trend
+    const getSpeedMessage = () => {
+        switch (displayData.trend) {
+            case 'IMPROVING':
+                return { text: 'Great pace! Keep it up! 🔥', color: 'var(--color-success)' };
+            case 'STABLE':
+                return { text: 'Steady progress. Try to solve 1+ daily!', color: 'var(--color-warning)' };
+            case 'SLOWING':
+                return { text: 'Slowing down? Your target date is moving out.', color: 'var(--color-error)' };
+            default:
+                return { text: '', color: 'inherit' };
+        }
+    };
+
+    const speedMessage = getSpeedMessage();
+
     return (
         <div className="page">
             <div className="grid grid-2" style={{ alignItems: 'start' }}>
                 {/* Readiness Meter */}
                 <div className="card readiness-meter">
-                    <p className="text-muted mb-sm">MAANG Readiness</p>
-                    <div className="readiness-days">
-                        {displayData.daysRemaining}
+                    <p className="text-muted mb-sm">FAANG Ready By</p>
+                    <div className="target-date">
+                        {formattedDate}
                     </div>
-                    <p className="readiness-label">days remaining</p>
+                    <p className="days-remaining">
+                        {displayData.daysRemaining} days remaining
+                    </p>
 
                     <div className={`readiness-trend ${displayData.trend.toLowerCase()}`}>
                         {displayData.trend === 'IMPROVING' && '📈'}
@@ -50,15 +101,19 @@ export default function Dashboard() {
                         {' '}{displayData.trend}
                     </div>
 
+                    <p className="speed-message" style={{ color: speedMessage.color }}>
+                        {speedMessage.text}
+                    </p>
+
                     <div className="mt-lg">
                         <div className="progress-bar">
                             <div
                                 className="progress-bar-fill"
-                                style={{ width: `${displayData.percentComplete}%` }}
+                                style={{ width: `${weightedProgress.toFixed(1)}%` }}
                             />
                         </div>
                         <p className="text-muted mt-sm" style={{ fontSize: '0.875rem' }}>
-                            {displayData.breakdown.questionsSolved} / {displayData.breakdown.questionsTotal} questions
+                            {weightedProgress.toFixed(1)}% complete (weighted by difficulty)
                         </p>
                     </div>
                 </div>

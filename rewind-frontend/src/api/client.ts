@@ -36,13 +36,13 @@ class ApiClient {
     }
 
     // Questions
-    getQuestions(params?: { difficulty?: string; patternId?: string }) {
+    getQuestions(params?: { difficulty?: string; patternId?: string; page?: number; size?: number }) {
         // Filter out undefined values
         const cleanParams = Object.fromEntries(
             Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== '')
         );
         const query = new URLSearchParams(cleanParams as Record<string, string>).toString();
-        return this.request<QuestionResponse[]>(`/questions${query ? `?${query}` : ''}`);
+        return this.request<QuestionResponse[] | PagedQuestionResponse>(`/questions${query ? `?${query}` : ''}`);
     }
 
     getQuestion(id: string) {
@@ -56,6 +56,14 @@ class ApiClient {
     // User Questions
     getMyQuestions() {
         return this.request<UserQuestionResponse[]>('/user-questions');
+    }
+
+    /**
+     * Lightweight endpoint that only returns questionId:status map.
+     * Much faster than getMyQuestions - ideal for initial page load.
+     */
+    getStatusMap() {
+        return this.request<Record<string, string>>('/user-questions/status-map');
     }
 
     startQuestion(questionId: string) {
@@ -143,6 +151,15 @@ export interface QuestionResponse {
     timeMinutes: number;
     orderIndex: number;
     pattern: PatternInfo;
+}
+
+export interface PagedQuestionResponse {
+    content: QuestionResponse[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    hasNext: boolean;
 }
 
 export interface UserQuestionResponse {

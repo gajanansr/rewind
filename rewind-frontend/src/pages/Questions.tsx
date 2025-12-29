@@ -2,7 +2,20 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import type { PatternInfo } from '../api/client';
+import type { PatternInfo, QuestionResponse } from '../api/client';
+
+// Skeleton loader component
+function QuestionSkeleton() {
+    return (
+        <div className="question-item skeleton">
+            <div className="question-number skeleton-box" style={{ width: 40, height: 40 }} />
+            <div className="question-info">
+                <div className="skeleton-box" style={{ width: '60%', height: 20, marginBottom: 8 }} />
+                <div className="skeleton-box" style={{ width: '40%', height: 16 }} />
+            </div>
+        </div>
+    );
+}
 
 export default function Questions() {
     const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
@@ -12,26 +25,28 @@ export default function Questions() {
     const { data: patterns = [], isLoading: patternsLoading } = useQuery({
         queryKey: ['patterns'],
         queryFn: () => api.getPatterns(),
+        staleTime: 1000 * 60 * 30, // Cache patterns for 30 minutes
     });
 
     const { data: questions = [], isLoading: questionsLoading } = useQuery({
         queryKey: ['questions', selectedPattern, selectedDifficulty],
-        queryFn: () => api.getQuestions({
-            patternId: selectedPattern || undefined,
-            difficulty: selectedDifficulty || undefined,
-        }),
+        queryFn: async () => {
+            const result = await api.getQuestions({
+                patternId: selectedPattern || undefined,
+                difficulty: selectedDifficulty || undefined,
+            });
+            // Handle both array and paginated response
+            return Array.isArray(result) ? result : result.content;
+        },
     });
 
-    const { data: userQuestions = [] } = useQuery({
-        queryKey: ['user-questions'],
-        queryFn: () => api.getMyQuestions(),
-        retry: false, // Don't retry if not authenticated
+    // Use lightweight status-map endpoint instead of full user-questions
+    const { data: statusMap = {} } = useQuery({
+        queryKey: ['status-map'],
+        queryFn: () => api.getStatusMap(),
+        retry: false,
+        staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     });
-
-    // Create a map of question status
-    const statusMap = new Map(
-        userQuestions?.map(uq => [uq.questionId, uq.status]) || []
-    );
 
     const isLoading = patternsLoading || questionsLoading;
 
@@ -40,7 +55,7 @@ export default function Questions() {
     };
 
     const getStatusIcon = (questionId: string) => {
-        const status = statusMap.get(questionId);
+        const status = statusMap[questionId];
         if (status === 'DONE') return <span className="question-status done">✓</span>;
         if (status === 'STARTED') return <span className="question-status started">⋯</span>;
         return null;
@@ -92,11 +107,16 @@ export default function Questions() {
             </div>
 
             {/* Question List */}
-            {isLoading ? (
-                <div className="text-center text-muted">Loading questions...</div>
-            ) : (
-                <div className="question-list">
-                    {questions.map((q) => (
+            <div className="question-list">
+                {isLoading ? (
+                    // Show skeleton loaders while loading
+                    <>
+                        {[...Array(8)].map((_, i) => (
+                            <QuestionSkeleton key={i} />
+                        ))}
+                    </>
+                ) : (
+                    questions.map((q: QuestionResponse) => (
                         <div
                             key={q.id}
                             className="question-item"
@@ -127,9 +147,10 @@ export default function Questions() {
                                 LeetCode ↗
                             </a>
                         </div>
-                    ))}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
         </div>
     );
 }
+

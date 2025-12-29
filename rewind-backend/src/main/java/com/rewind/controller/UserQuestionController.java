@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,12 +28,32 @@ public class UserQuestionController {
         @GetMapping
         public ResponseEntity<List<UserQuestionResponse>> getMyQuestions(
                         @AuthenticationPrincipal User user) {
-                List<UserQuestion> questions = userQuestionRepository.findByUserId(user.getId());
+                // Use optimized query with JOIN FETCH
+                List<UserQuestion> questions = userQuestionRepository.findByUserIdWithQuestionAndPattern(user.getId());
                 List<UserQuestionResponse> response = questions.stream()
                                 .map(this::toResponse)
                                 .collect(Collectors.toList());
 
                 return ResponseEntity.ok(response);
+        }
+
+        /**
+         * Lightweight endpoint that only returns question IDs with their status.
+         * Much faster than loading full question data - ideal for initial page load.
+         */
+        @GetMapping("/status-map")
+        public ResponseEntity<Map<UUID, String>> getStatusMap(
+                        @AuthenticationPrincipal User user) {
+                List<Object[]> results = userQuestionRepository.findQuestionStatusByUserId(user.getId());
+
+                Map<UUID, String> statusMap = new HashMap<>();
+                for (Object[] row : results) {
+                        UUID questionId = (UUID) row[0];
+                        UserQuestion.Status status = (UserQuestion.Status) row[1];
+                        statusMap.put(questionId, status.name());
+                }
+
+                return ResponseEntity.ok(statusMap);
         }
 
         @PostMapping("/{questionId}/start")
