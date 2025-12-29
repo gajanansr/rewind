@@ -158,6 +158,15 @@ export default function Revisions() {
                                     )}
 
                                     <div className="flex gap-md">
+                                        <a
+                                            href={revision.question.leetcodeUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-ghost"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Open in LeetCode ↗
+                                        </a>
                                         <button
                                             className="btn btn-secondary"
                                             onClick={(e) => handleReRecord(e, revision.question.id)}

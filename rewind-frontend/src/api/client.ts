@@ -251,6 +251,7 @@ export interface RevisionScheduleResponse {
         title: string;
         difficulty: string;
         pattern: string;
+        leetcodeUrl: string;
     };
     reason: string;
     priorityScore: number;

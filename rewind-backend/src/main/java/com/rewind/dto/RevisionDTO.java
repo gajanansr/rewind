@@ -27,6 +27,7 @@ public class RevisionDTO {
         private String title;
         private String difficulty;
         private String pattern;
+        private String leetcodeUrl;
     }
 
     @Data
