@@ -18,4 +18,4 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Exclude flyway_schema_history from RLS enforcement as it is an internal tool table
 -- and managed by the migration user (superuser)
-ALTER TABLE flyway_schema_history ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE flyway_schema_history ENABLE ROW LEVEL SECURITY; -- DO NOT ENABLE THIS
