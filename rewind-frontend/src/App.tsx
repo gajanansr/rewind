@@ -5,8 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Questions from './pages/Questions';
 import Solve from './pages/Solve';
 import Revisions from './pages/Revisions';
-import Analytics from './pages/Analytics';
 import Learn from './pages/Learn';
+import Profile from './pages/Profile';
 import Login from './pages/Login';
 import './styles/index.css';
 
@@ -31,7 +31,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Navigation() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const logout = useAuthStore((state) => state.logout);
 
   if (!isAuthenticated) return null;
 
@@ -54,12 +53,9 @@ function Navigation() {
         <NavLink to="/revisions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Revisions
         </NavLink>
-        <NavLink to="/analytics" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Analytics
+        <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Profile
         </NavLink>
-        <button onClick={logout} className="btn btn-ghost">
-          Logout
-        </button>
       </div>
     </nav>
   );
@@ -105,9 +101,11 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/analytics" element={
+
+
+            <Route path="/profile" element={
               <ProtectedRoute>
-                <Analytics />
+                <Profile />
               </ProtectedRoute>
             } />
           </Routes>

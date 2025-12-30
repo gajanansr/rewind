@@ -69,7 +69,7 @@ public class ReadinessController {
                 return ResponseEntity.ok(ReadinessResponse.builder()
                                 .daysRemaining(breakdown.getDaysRemaining())
                                 .targetDays(breakdown.getTargetDays())
-                                .percentComplete(breakdown.getPercentComplete())
+                                .percentComplete((double) breakdown.getPercentComplete())
                                 .trend(breakdown.getTrend())
                                 .breakdown(ReadinessBreakdown.builder()
                                                 .questionsSolved(breakdown.getQuestionsSolved())

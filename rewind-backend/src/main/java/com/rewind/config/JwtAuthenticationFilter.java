@@ -190,7 +190,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String email = claims.get("email", String.class);
 
         String name = null;
-        int targetDays = 90; // Default value
+        double targetDays = 90.0; // Default value
 
         Object userMetadata = claims.get("user_metadata");
         if (userMetadata instanceof Map) {
@@ -205,7 +205,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Get target_days from signup
             Object targetDaysObj = metadata.get("target_days");
             if (targetDaysObj instanceof Number) {
-                targetDays = ((Number) targetDaysObj).intValue();
+                targetDays = ((Number) targetDaysObj).doubleValue();
             }
         }
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
-import { patternConfig, getPatternResource } from '../config/patternConfig';
+import { patternConfig, getPatternResource, PATTERN_ORDER } from '../config/patternConfig';
 import type { PatternInfo } from '../api/client';
 
 export default function Learn() {
@@ -38,7 +38,14 @@ export default function Learn() {
                         <div className="text-muted">Loading patterns...</div>
                     ) : (
                         <div className="pattern-list">
-                            {patterns.map((pattern: PatternInfo) => {
+                            {[...patterns].sort((a, b) => {
+                                const indexA = PATTERN_ORDER.indexOf(a.name);
+                                const indexB = PATTERN_ORDER.indexOf(b.name);
+                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                if (indexA !== -1) return -1;
+                                if (indexB !== -1) return 1;
+                                return a.name.localeCompare(b.name);
+                            }).map((pattern: PatternInfo) => {
                                 const hasResource = !!patternConfig[pattern.name];
                                 return (
                                     <button

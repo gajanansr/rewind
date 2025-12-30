@@ -22,14 +22,15 @@ public class ReadinessService {
     private final RevisionScheduleRepository revisionScheduleRepository;
 
     // Base day reduction values
-    private static final double EASY_BASE = 0.3;
-    private static final double MEDIUM_BASE = 0.5;
-    private static final double HARD_BASE = 0.8;
+    private static final double EASY_BASE = 0.28;
+    private static final double MEDIUM_BASE = 0.56;
+    private static final double HARD_BASE = 0.83;
 
-    // Difficulty multipliers
+    // Difficulty multipliers (Normalized to 1.0 since base values now reflect
+    // difficulty)
     private static final double EASY_MULTIPLIER = 1.0;
-    private static final double MEDIUM_MULTIPLIER = 1.5;
-    private static final double HARD_MULTIPLIER = 2.5;
+    private static final double MEDIUM_MULTIPLIER = 1.0;
+    private static final double HARD_MULTIPLIER = 1.0;
 
     // Revision bonus
     private static final double REVISION_EASY_BONUS = 0.2;
@@ -58,19 +59,23 @@ public class ReadinessService {
         // Final calculation - use round, not ceil, but ensure at least some progress
         // for Hard questions
         double daysReduced = baseValue * difficultyMultiplier * patternWeight * paceBonus;
-        int roundedDays = (int) Math.max(0, Math.round(daysReduced));
+        // Update user's readiness (allow fractional days)
+        double newDays = Math.max(0, user.getCurrentReadinessDays() - daysReduced);
+        // Round to 2 decimal places for storage/display stability if needed, or keep
+        // precision
+        newDays = Math.round(newDays * 100.0) / 100.0;
 
-        // Update user's readiness
-        int newDays = Math.max(0, user.getCurrentReadinessDays() - roundedDays);
         user.setCurrentReadinessDays(newDays);
         userRepository.save(user);
 
         // Record event
-        recordEvent(user, -roundedDays,
+        // Use negative delta for reduction, rounded to 2 decimal places
+        double roundedDelta = Math.round(daysReduced * 100.0) / 100.0;
+        recordEvent(user, -roundedDelta,
                 "Completed '" + question.getTitle() + "' (" + question.getDifficulty() + ")",
                 question);
 
-        return new ReadinessResult(newDays, daysReduced, roundedDays);
+        return new ReadinessResult(newDays, daysReduced, daysReduced);
     }
 
     /**
@@ -87,16 +92,20 @@ public class ReadinessService {
             default -> REVISION_EASY_BONUS;
         };
 
-        int roundedDays = (int) Math.max(0, Math.round(bonus));
-        int newDays = Math.max(0, user.getCurrentReadinessDays() - roundedDays);
+        // Use bonus directly
+        double newDays = Math.max(0, user.getCurrentReadinessDays() - bonus);
+        newDays = Math.round(newDays * 100.0) / 100.0;
+
         user.setCurrentReadinessDays(newDays);
         userRepository.save(user);
 
-        recordEvent(user, -roundedDays,
+        // Record event with rounded delta
+        double roundedBonus = Math.round(bonus * 100.0) / 100.0;
+        recordEvent(user, -roundedBonus,
                 "Revised '" + question.getTitle() + "'",
                 question);
 
-        return new ReadinessResult(newDays, bonus, roundedDays);
+        return new ReadinessResult(newDays, bonus, bonus);
     }
 
     /**
@@ -179,7 +188,7 @@ public class ReadinessService {
         return 1.0;
     }
 
-    private void recordEvent(User user, int deltaDays, String reason, Question relatedQuestion) {
+    private void recordEvent(User user, double deltaDays, String reason, Question relatedQuestion) {
         ReadinessEvent event = ReadinessEvent.builder()
                 .user(user)
                 .changeDeltaDays(deltaDays)
@@ -190,14 +199,14 @@ public class ReadinessService {
     }
 
     // Result classes
-    public record ReadinessResult(int newDaysRemaining, double exactReduction, int roundedReduction) {
+    public record ReadinessResult(double newDaysRemaining, double exactReduction, double actualReduction) {
     }
 
     @lombok.Builder
     @lombok.Data
     public static class ReadinessBreakdown {
-        private int daysRemaining;
-        private int targetDays;
+        private double daysRemaining;
+        private double targetDays;
         private int questionsSolved;
         private int questionsTotal;
         private int easyComplete;

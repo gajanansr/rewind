@@ -40,7 +40,7 @@ export default function Dashboard() {
     });
 
     // Default values when not authenticated or data not available
-    const displayData = readiness || {
+    const defaultDisplayData = {
         daysRemaining: 90,
         targetDays: 90,
         percentComplete: 0,
@@ -52,10 +52,13 @@ export default function Dashboard() {
             mediumComplete: 0,
             hardComplete: 0,
             revisionsComplete: 0,
-            weakPatterns: ['Start solving to see weak patterns'],
+            weakPatterns: ['Start solving to see weak patterns'] as string[],
         },
-        recentEvents: [],
+        recentEvents: [] as any[],
+        registrationDate: undefined as string | undefined
     };
+
+    const displayData = readiness || defaultDisplayData;
 
     // Calculate weighted progress based on day reductions
     const easyDaysReduced = displayData.breakdown.easyComplete * EASY_DAY_REDUCTION;
@@ -166,7 +169,10 @@ export default function Dashboard() {
             {/* Activity Heatmap */}
             <div className="card mt-lg">
                 <h3 className="card-title mb-md">Activity</h3>
-                <ActivityHeatmap data={activity} />
+                <ActivityHeatmap
+                    data={activity}
+                    startDate={displayData.registrationDate}
+                />
             </div>
 
             {/* Recent Activity */}
@@ -185,7 +191,7 @@ export default function Dashboard() {
                                 color: event.delta < 0 ? 'var(--color-success)' : 'var(--color-error)',
                                 fontWeight: 600
                             }}>
-                                {event.delta < 0 ? '' : '+'}{event.delta} days
+                                {event.delta < 0 ? '' : '+'}{Number(event.delta).toFixed(2)} days
                             </span>
                         </div>
                     ))}

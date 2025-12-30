@@ -138,6 +138,30 @@ class ApiClient {
             method: 'POST',
         });
     }
+
+    resetProgress() {
+        return this.request<void>('/user-questions/reset', {
+            method: 'DELETE',
+        });
+    }
+
+    async uploadFile(url: string, file: Blob, contentType: string = 'audio/webm') {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                ...this.getAuthHeader(),
+                'Content-Type': contentType,
+            },
+            body: file,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+            throw new Error(error.message || `Upload failed with status ${response.status}`);
+        }
+
+        return response;
+    }
 }
 
 // Types

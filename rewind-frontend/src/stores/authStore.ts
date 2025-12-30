@@ -5,6 +5,7 @@ interface User {
     id: string;
     email: string;
     name?: string;
+    createdAt?: string;
 }
 
 interface AuthState {
@@ -15,6 +16,7 @@ interface AuthState {
     // Actions
     setAuth: (user: User, token: string) => void;
     logout: () => void;
+    signOut: () => void; // Alias for logout
     checkAuth: () => boolean;
 }
 
@@ -34,6 +36,8 @@ export const useAuthStore = create<AuthState>()(
                 localStorage.removeItem('access_token');
                 set({ user: null, accessToken: null, isAuthenticated: false });
             },
+
+            signOut: () => get().logout(),
 
             checkAuth: () => {
                 const token = localStorage.getItem('access_token');

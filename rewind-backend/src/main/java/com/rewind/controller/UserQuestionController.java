@@ -2,11 +2,16 @@ package com.rewind.controller;
 
 import com.rewind.dto.QuestionDTO.*;
 import com.rewind.model.*;
-import com.rewind.repository.*;
+import com.rewind.repository.ExplanationRecordingRepository;
+import com.rewind.repository.ReadinessEventRepository;
+import com.rewind.repository.SolutionRepository;
+import com.rewind.repository.UserQuestionRepository;
+import com.rewind.repository.UserRepository;
 import com.rewind.service.UserQuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -22,6 +27,8 @@ public class UserQuestionController {
 
         private final UserQuestionService userQuestionService;
         private final UserQuestionRepository userQuestionRepository;
+        private final ReadinessEventRepository readinessEventRepository;
+        private final UserRepository userRepository;
         private final SolutionRepository solutionRepository;
         private final ExplanationRecordingRepository recordingRepository;
 
@@ -129,6 +136,22 @@ public class UserQuestionController {
                                 .solutions(solutions)
                                 .recordings(recordings)
                                 .build());
+        }
+
+        @DeleteMapping("/reset")
+        @Transactional
+        public ResponseEntity<Void> resetProgress(@AuthenticationPrincipal User user) {
+                // Delete all user questions
+                userQuestionRepository.deleteByUserId(user.getId());
+
+                // Delete all readiness events
+                readinessEventRepository.deleteByUserId(user.getId());
+
+                // Reset user stats
+                user.setCurrentReadinessDays(user.getInterviewTargetDays());
+                userRepository.save(user);
+
+                return ResponseEntity.noContent().build();
         }
 
         private UserQuestionResponse toResponse(UserQuestion uq) {

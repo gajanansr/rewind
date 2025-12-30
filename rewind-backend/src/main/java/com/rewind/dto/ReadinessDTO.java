@@ -12,9 +12,9 @@ public class ReadinessDTO {
     @Data
     @Builder
     public static class ReadinessResponse {
-        private Integer daysRemaining;
-        private Integer targetDays;
-        private Integer percentComplete;
+        private Double daysRemaining;
+        private Double targetDays;
+        private Double percentComplete;
         private String trend;
         private ReadinessBreakdown breakdown;
         private List<ReadinessEventInfo> recentEvents;
@@ -24,6 +24,8 @@ public class ReadinessDTO {
     @Data
     @Builder
     public static class ReadinessBreakdown {
+        private Double daysRemaining;
+        private Double targetDays;
         private Integer questionsSolved;
         private Integer questionsTotal;
         private Integer easyComplete;
@@ -36,7 +38,7 @@ public class ReadinessDTO {
     @Data
     @Builder
     public static class ReadinessEventInfo {
-        private Integer delta;
+        private Double delta;
         private String reason;
         private Instant createdAt;
     }

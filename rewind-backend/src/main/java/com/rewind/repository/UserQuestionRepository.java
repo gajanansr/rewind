@@ -61,4 +61,6 @@ public interface UserQuestionRepository extends JpaRepository<UserQuestion, UUID
             "GROUP BY DATE(done_at) " +
             "ORDER BY date", nativeQuery = true)
     List<Object[]> findDailyActivityCounts(UUID userId, Instant since);
+
+    void deleteByUserId(UUID userId);
 }

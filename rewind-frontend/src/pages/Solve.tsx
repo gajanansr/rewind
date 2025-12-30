@@ -76,14 +76,46 @@ export default function Solve() {
 
     // Save recording mutation
     const saveRecordingMutation = useMutation({
-        mutationFn: () => api.saveRecording({
-            userQuestionId: userQuestionId!,
-            audioUrl: recorder.audioUrl || '',
-            durationSeconds: recorder.duration,
-            confidenceScore,
-        }),
+        mutationFn: async () => {
+            if (!userQuestionId) throw new Error('User Question ID is missing');
+
+            // If we have a blob (new recording), upload it
+            if (recorder.audioBlob) {
+                // 1. Get upload URL
+                const { uploadUrl } = await api.getUploadUrl({
+                    userQuestionId,
+                    contentType: 'audio/webm',
+                    durationSeconds: recorder.duration,
+                });
+
+                // 2. Upload file
+                await api.uploadFile(uploadUrl, recorder.audioBlob, 'audio/webm');
+
+                // 3. Construct public URL (assuming public bucket 'audio')
+                // uploadUrl is like .../object/audio/...
+                // publicUrl is like .../object/public/audio/...
+                const publicUrl = uploadUrl.replace('/object/audio/', '/object/public/audio/');
+
+                // 4. Save metadata
+                return api.saveRecording({
+                    userQuestionId,
+                    audioUrl: publicUrl,
+                    durationSeconds: recorder.duration,
+                    confidenceScore,
+                });
+            } else {
+                // Fallback for logic without recording (shouldn't happen in this step but safe to keep)
+                return api.saveRecording({
+                    userQuestionId,
+                    audioUrl: '',
+                    durationSeconds: recorder.duration,
+                    confidenceScore,
+                });
+            }
+        },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['user-questions'] });
+            queryClient.invalidateQueries({ queryKey: ['status-map'] }); // Force refresh of questions list status
             queryClient.invalidateQueries({ queryKey: ['readiness'] });
             queryClient.invalidateQueries({ queryKey: ['question-history', questionId] });
             setRecordingId(data.recordingId);

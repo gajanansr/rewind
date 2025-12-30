@@ -22,7 +22,7 @@ public class ReadinessEvent {
     private User user;
 
     @Column(name = "change_delta_days", nullable = false)
-    private Integer changeDeltaDays;
+    private Double changeDeltaDays;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String reason;

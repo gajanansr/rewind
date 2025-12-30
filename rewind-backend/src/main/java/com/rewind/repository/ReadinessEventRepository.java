@@ -12,4 +12,6 @@ public interface ReadinessEventRepository extends JpaRepository<ReadinessEvent, 
     List<ReadinessEvent> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<ReadinessEvent> findTop10ByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    void deleteByUserId(UUID userId);
 }

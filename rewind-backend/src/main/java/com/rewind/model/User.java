@@ -24,11 +24,11 @@ public class User {
 
     @Column(name = "interview_target_days")
     @Builder.Default
-    private Integer interviewTargetDays = 90;
+    private Double interviewTargetDays = 90.0;
 
     @Column(name = "current_readiness_days")
     @Builder.Default
-    private Integer currentReadinessDays = 90;
+    private Double currentReadinessDays = 90.0;
 
     @Column(name = "created_at")
     @Builder.Default

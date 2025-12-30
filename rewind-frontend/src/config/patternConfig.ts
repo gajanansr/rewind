@@ -268,3 +268,27 @@ export const patternConfig: Record<string, PatternResource> = {
 export const getPatternResource = (patternName: string): PatternResource | undefined => {
     return patternConfig[patternName];
 };
+
+export const PATTERN_ORDER = [
+    "Two Pointers",
+    "Sliding Window",
+    "Fast & Slow Pointers",
+    "Merge Intervals",
+    "Cyclic Sort",
+    "In-place Reversal of a Linked List",
+    "Tree Breadth First Search",
+    "Tree Depth First Search",
+    "Two Heaps",
+    "Subsets",
+    "Modified Binary Search",
+    "Top K Elements",
+    "Bitwise XOR",
+    "Backtracking",
+    "0/1 Knapsack (Dynamic Programming)",
+    "Topological Sort (Graph)",
+    "K-way Merge",
+    "Monotonic Stack",
+    "Union Find",
+    "Island (Matrix Traversal)",
+    "Greedy"
+];
