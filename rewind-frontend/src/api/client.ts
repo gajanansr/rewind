@@ -110,6 +110,11 @@ class ApiClient {
         return this.request<ReadinessResponse>('/readiness');
     }
 
+    // Activity heatmap (daily question counts)
+    getActivity() {
+        return this.request<Record<string, number>>('/user-questions/activity');
+    }
+
     // Revisions
     getPendingRevisions() {
         return this.request<{ revisions: RevisionScheduleResponse[]; totalPending: number }>(
@@ -242,6 +247,7 @@ export interface ReadinessResponse {
         reason: string;
         createdAt: string;
     }[];
+    registrationDate?: string;
 }
 
 export interface RevisionScheduleResponse {

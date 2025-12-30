@@ -6,6 +6,7 @@ import Questions from './pages/Questions';
 import Solve from './pages/Solve';
 import Revisions from './pages/Revisions';
 import Analytics from './pages/Analytics';
+import Learn from './pages/Learn';
 import Login from './pages/Login';
 import './styles/index.css';
 
@@ -43,6 +44,9 @@ function Navigation() {
       <div className="nav-links">
         <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Dashboard
+        </NavLink>
+        <NavLink to="/learn" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          Learn
         </NavLink>
         <NavLink to="/questions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           Questions
@@ -92,6 +96,12 @@ function App() {
             <Route path="/revisions" element={
               <ProtectedRoute>
                 <Revisions />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/learn" element={
+              <ProtectedRoute>
+                <Learn />
               </ProtectedRoute>
             } />
 

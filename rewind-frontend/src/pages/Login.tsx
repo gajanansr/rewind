@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 
+const TARGET_DAY_OPTIONS = [30, 60, 90, 120];
+
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [targetDays, setTargetDays] = useState(90);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -26,6 +29,11 @@ export default function Login() {
                 const { data, error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        data: {
+                            target_days: targetDays,
+                        }
+                    }
                 });
 
                 if (signUpError) throw signUpError;
@@ -83,19 +91,17 @@ export default function Login() {
             alignItems: 'center',
             justifyContent: 'center'
         }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+            <div className="card" style={{ width: '100%', maxWidth: '420px' }}>
                 <div className="text-center mb-lg">
                     <h1 style={{
                         fontSize: '2rem',
-                        background: 'linear-gradient(135deg, var(--color-accent), #8b5cf6)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text'
+                        fontWeight: 700,
+                        color: 'var(--color-text-primary)',
                     }}>
-                        🔄 Rewind
+                        Rewind
                     </h1>
                     <p className="text-muted mt-sm">
-                        Train your thinking for technical interviews
+                        Train your thinking for FAANG interviews
                     </p>
                 </div>
 
@@ -105,7 +111,8 @@ export default function Login() {
                         background: 'rgba(239, 68, 68, 0.15)',
                         borderRadius: 'var(--radius-md)',
                         color: 'var(--color-error)',
-                        marginBottom: 'var(--spacing-md)'
+                        marginBottom: 'var(--spacing-md)',
+                        fontSize: '0.875rem'
                     }}>
                         {error}
                     </div>
@@ -114,10 +121,11 @@ export default function Login() {
                 {message && (
                     <div style={{
                         padding: 'var(--spacing-md)',
-                        background: 'rgba(34, 197, 94, 0.15)',
+                        background: 'rgba(16, 185, 129, 0.15)',
                         borderRadius: 'var(--radius-md)',
                         color: 'var(--color-success)',
-                        marginBottom: 'var(--spacing-md)'
+                        marginBottom: 'var(--spacing-md)',
+                        fontSize: '0.875rem'
                     }}>
                         {message}
                     </div>
@@ -129,7 +137,8 @@ export default function Login() {
                             display: 'block',
                             marginBottom: 'var(--spacing-xs)',
                             color: 'var(--color-text-secondary)',
-                            fontSize: '0.875rem'
+                            fontSize: '0.875rem',
+                            fontWeight: 500
                         }}>
                             Email
                         </label>
@@ -143,12 +152,13 @@ export default function Login() {
                         />
                     </div>
 
-                    <div className="mb-lg">
+                    <div className="mb-md">
                         <label style={{
                             display: 'block',
                             marginBottom: 'var(--spacing-xs)',
                             color: 'var(--color-text-secondary)',
-                            fontSize: '0.875rem'
+                            fontSize: '0.875rem',
+                            fontWeight: 500
                         }}>
                             Password
                         </label>
@@ -163,13 +173,43 @@ export default function Login() {
                         />
                     </div>
 
+                    {/* Target Days - Only show during signup */}
+                    {mode === 'signup' && (
+                        <div className="mb-lg">
+                            <label style={{
+                                display: 'block',
+                                marginBottom: 'var(--spacing-sm)',
+                                color: 'var(--color-text-secondary)',
+                                fontSize: '0.875rem',
+                                fontWeight: 500
+                            }}>
+                                How many days to prepare?
+                            </label>
+                            <div className="target-days-selector">
+                                {TARGET_DAY_OPTIONS.map((days) => (
+                                    <button
+                                        key={days}
+                                        type="button"
+                                        className={`target-day-btn ${targetDays === days ? 'active' : ''}`}
+                                        onClick={() => setTargetDays(days)}
+                                    >
+                                        {days}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: 'var(--spacing-xs)' }}>
+                                Target: Clear all 169 questions in {targetDays} days
+                            </p>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         className="btn btn-primary btn-lg"
                         style={{ width: '100%' }}
                         disabled={isLoading}
                     >
-                        {isLoading ? (mode === 'signup' ? 'Creating account...' : 'Signing in...') : (mode === 'signup' ? 'Create Account' : 'Sign In')}
+                        {isLoading ? (mode === 'signup' ? 'Creating account...' : 'Signing in...') : (mode === 'signup' ? 'Start Your Journey' : 'Sign In')}
                     </button>
                 </form>
 
@@ -185,7 +225,7 @@ export default function Login() {
                                     border: 'none',
                                     color: 'var(--color-accent)',
                                     cursor: 'pointer',
-                                    textDecoration: 'underline'
+                                    fontWeight: 500
                                 }}
                             >
                                 Sign up
@@ -202,7 +242,7 @@ export default function Login() {
                                     border: 'none',
                                     color: 'var(--color-accent)',
                                     cursor: 'pointer',
-                                    textDecoration: 'underline'
+                                    fontWeight: 500
                                 }}
                             >
                                 Sign in
@@ -214,4 +254,3 @@ export default function Login() {
         </div>
     );
 }
-

@@ -18,6 +18,7 @@ public class ReadinessDTO {
         private String trend;
         private ReadinessBreakdown breakdown;
         private List<ReadinessEventInfo> recentEvents;
+        private String registrationDate; // ISO format
     }
 
     @Data

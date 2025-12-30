@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import type { PatternInfo, QuestionResponse } from '../api/client';
 
@@ -18,7 +18,10 @@ function QuestionSkeleton() {
 }
 
 export default function Questions() {
-    const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
+    const [searchParams] = useSearchParams();
+    const patternFromUrl = searchParams.get('pattern');
+
+    const [selectedPattern, setSelectedPattern] = useState<string | null>(patternFromUrl);
     const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
     const navigate = useNavigate();
 

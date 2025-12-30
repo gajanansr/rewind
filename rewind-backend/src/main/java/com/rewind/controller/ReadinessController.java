@@ -81,6 +81,7 @@ public class ReadinessController {
                                                 .weakPatterns(weakPatterns)
                                                 .build())
                                 .recentEvents(recentEvents)
+                                .registrationDate(user.getCreatedAt().toString())
                                 .build());
         }
 

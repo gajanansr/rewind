@@ -56,6 +56,34 @@ public class UserQuestionController {
                 return ResponseEntity.ok(statusMap);
         }
 
+        /**
+         * Daily activity counts for GitHub-style contribution heatmap.
+         * Returns a map of date -> count for the last 365 days.
+         */
+        @GetMapping("/activity")
+        public ResponseEntity<Map<String, Integer>> getDailyActivity(
+                        @AuthenticationPrincipal User user) {
+                java.time.Instant since = java.time.Instant.now().minus(365, java.time.temporal.ChronoUnit.DAYS);
+                List<Object[]> results = userQuestionRepository.findDailyActivityCounts(user.getId(), since);
+
+                Map<String, Integer> activityMap = new java.util.LinkedHashMap<>();
+                for (Object[] row : results) {
+                        // Handle both java.sql.Date and LocalDate
+                        String dateStr;
+                        if (row[0] instanceof java.sql.Date) {
+                                dateStr = ((java.sql.Date) row[0]).toLocalDate().toString();
+                        } else if (row[0] instanceof java.time.LocalDate) {
+                                dateStr = row[0].toString();
+                        } else {
+                                dateStr = row[0].toString();
+                        }
+                        int count = ((Number) row[1]).intValue();
+                        activityMap.put(dateStr, count);
+                }
+
+                return ResponseEntity.ok(activityMap);
+        }
+
         @PostMapping("/{questionId}/start")
         public ResponseEntity<UserQuestionResponse> startQuestion(
                         @AuthenticationPrincipal User user,

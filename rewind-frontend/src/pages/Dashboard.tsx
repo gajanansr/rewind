@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
+import ActivityHeatmap from '../components/ActivityHeatmap';
 
 // Question distribution in the 169-question set
 const TOTAL_QUESTIONS = 169;
@@ -29,6 +30,13 @@ export default function Dashboard() {
         queryKey: ['revisions-today'],
         queryFn: () => api.getTodayRevisions(),
         retry: false,
+    });
+
+    const { data: activity = {} } = useQuery({
+        queryKey: ['activity'],
+        queryFn: () => api.getActivity(),
+        retry: false,
+        staleTime: 1000 * 60 * 10, // Cache for 10 minutes
     });
 
     // Default values when not authenticated or data not available
@@ -69,11 +77,11 @@ export default function Dashboard() {
     const getSpeedMessage = () => {
         switch (displayData.trend) {
             case 'IMPROVING':
-                return { text: 'Great pace! Keep it up! 🔥', color: 'var(--color-success)' };
+                return { text: 'GOD SPEED! Keep it up! 🔥', color: 'var(--color-success)' };
             case 'STABLE':
-                return { text: 'Steady progress. Try to solve 1+ daily!', color: 'var(--color-warning)' };
+                return { text: 'Steady Player. Try to solve 1+ daily!', color: 'var(--color-warning)' };
             case 'SLOWING':
-                return { text: 'Slowing down? Your target date is moving out.', color: 'var(--color-error)' };
+                return { text: 'Slowing down? Gave up on dreams?', color: 'var(--color-error)' };
             default:
                 return { text: '', color: 'inherit' };
         }
@@ -153,6 +161,12 @@ export default function Dashboard() {
                         </p>
                     </div>
                 </div>
+            </div>
+
+            {/* Activity Heatmap */}
+            <div className="card mt-lg">
+                <h3 className="card-title mb-md">Activity</h3>
+                <ActivityHeatmap data={activity} />
             </div>
 
             {/* Recent Activity */}

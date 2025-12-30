@@ -53,4 +53,12 @@ public interface UserQuestionRepository extends JpaRepository<UserQuestion, UUID
             "JOIN FETCH q.pattern " +
             "WHERE uq.id = :id")
     Optional<UserQuestion> findByIdWithQuestionAndPattern(UUID id);
+
+    // Daily activity count for heatmap (last 365 days)
+    @Query(value = "SELECT DATE(done_at) as date, COUNT(*) as count " +
+            "FROM user_questions " +
+            "WHERE user_id = :userId AND status = 'DONE' AND done_at >= :since " +
+            "GROUP BY DATE(done_at) " +
+            "ORDER BY date", nativeQuery = true)
+    List<Object[]> findDailyActivityCounts(UUID userId, Instant since);
 }
