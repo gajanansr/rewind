@@ -1,0 +1,11 @@
+# Railway / Nixpacks Configuration for optimized memory usage
+
+[phases.setup]
+nixPkgs = ["jdk21_headless"]
+
+[phases.build]
+cmds = ["chmod +x mvnw", "./mvnw clean package -DskipTests"]
+
+[start]
+# Limit heap to 350MB (buffer for container overhead) and use SerialGC for low memory footprint
+cmd = "java -Xmx350m -Xms256m -XX:+UseSerialGC -jar target/*.jar"
