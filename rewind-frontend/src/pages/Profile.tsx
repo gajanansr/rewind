@@ -82,14 +82,12 @@ export default function Profile() {
 
             {/* Support Developer Section */}
             <div className="card mb-lg" style={{ borderColor: 'var(--color-accent-soft)' }}>
-                <div className="flex items-start gap-lg">
-                    <div style={{ fontSize: '2rem' }}>💖</div>
+                <div className="flex items-start gap-md">
+                    <div style={{ fontSize: '1.5rem' }}>💖</div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-bold mb-sm">Support the Developer</h3>
-                        <p className="text-muted mb-md">
-                            Rewind is a labor of love to help you master patterns. If you find it valuable,
-                            consider supporting the development! Features like cloud sync, better AI explanations,
-                            and mobile apps are on the roadmap.
+                        <h3 className="font-bold mb-sm">Support the Developer</h3>
+                        <p className="text-muted mb-md profile-support-text">
+                            Rewind is a labor of love. If you find it valuable, consider supporting the development!
                         </p>
                         <a
                             href="https://razorpay.me/@gajananrathod"
@@ -105,13 +103,13 @@ export default function Profile() {
 
             {/* Actions */}
             <div className="card mb-xl">
-                <h3 className="text-lg font-bold mb-md">Account Actions</h3>
+                <h3 className="font-bold mb-md">Account Actions</h3>
 
                 <div className="flex flex-col gap-md">
-                    <div className="flex justify-between items-center" style={{ borderBottom: '1px solid var(--color-border)', padding: 'var(--spacing-md)' }}>
+                    <div className="flex justify-between items-center profile-action-row" style={{ borderBottom: '1px solid var(--color-border)', padding: 'var(--spacing-md)' }}>
                         <div>
                             <div className="font-medium">Sign Out</div>
-                            <div className="text-sm text-muted">Log out of your account on this device</div>
+                            <div className="text-sm text-muted">Log out of your account</div>
                         </div>
                         <button onClick={handleSignOut} className="btn btn-secondary">
                             Sign Out
@@ -119,12 +117,11 @@ export default function Profile() {
                     </div>
 
                     {/* Danger Zone */}
-                    <div className="flex justify-between items-center" style={{ background: 'rgba(239, 68, 68, 0.05)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
+                    <div className="flex justify-between items-center profile-action-row" style={{ background: 'rgba(239, 68, 68, 0.05)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
                         <div>
-                            <div className="font-medium text-error" style={{ color: 'var(--color-error)' }}>Hard Reset</div>
+                            <div className="font-medium" style={{ color: 'var(--color-error)' }}>Hard Reset</div>
                             <div className="text-sm text-muted">
-                                Delete all progress, history, and solutions. <br />
-                                <strong style={{ color: 'var(--color-error)' }}>This action is irreversible.</strong>
+                                Delete all progress. <strong style={{ color: 'var(--color-error)' }}>Irreversible.</strong>
                             </div>
                         </div>
                         <button
@@ -136,7 +133,7 @@ export default function Profile() {
                                 color: 'var(--color-error)'
                             }}
                         >
-                            Reset Progress
+                            Reset
                         </button>
                     </div>
                 </div>

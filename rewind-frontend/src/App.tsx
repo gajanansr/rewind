@@ -85,9 +85,9 @@ function Navigation() {
 
         {/* Right side controls */}
         <div className="nav-actions">
-          {/* Theme Toggle */}
+          {/* Theme Toggle - Desktop only (also in menu for mobile) */}
           <button
-            className="theme-toggle"
+            className="theme-toggle desktop-only"
             onClick={toggleTheme}
             aria-label="Toggle theme"
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}

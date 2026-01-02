@@ -1412,9 +1412,9 @@ textarea.input {
     padding: var(--spacing-lg);
   }
 
-  /* Stack cards vertically with less gap */
+  /* Stack cards vertically with better padding */
   .card {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
   }
 
   /* Smaller headings */
@@ -1511,11 +1511,11 @@ textarea.input {
 /* ===== SMALL MOBILE (< 480px) ===== */
 @media (max-width: 480px) {
   .app-container {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-lg);
   }
 
   .card {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-lg);
     border-radius: var(--radius-md);
   }
 
@@ -1555,5 +1555,28 @@ textarea.input {
   .col-id {
     width: 30px !important;
     font-size: 0.75rem;
+  }
+
+  /* Profile Page Mobile Cleanup */
+  .profile-avatar-lg {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 1.5rem !important;
+  }
+
+  .profile-action-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+
+  .profile-action-row .btn {
+    width: 100%;
+    margin-top: var(--spacing-sm);
+  }
+
+  .profile-support-text {
+    font-size: 0.8rem;
+    line-height: 1.4;
   }
 }
