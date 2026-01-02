@@ -186,10 +186,11 @@ export default function Dashboard() {
                                 ? '1px solid var(--color-bg-tertiary)'
                                 : 'none'
                         }}>
-                            <span>{event.reason}</span>
+                            <span className="activity-reason">{event.reason}</span>
                             <span style={{
                                 color: event.delta < 0 ? 'var(--color-success)' : 'var(--color-error)',
-                                fontWeight: 600
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
                             }}>
                                 {event.delta < 0 ? '' : '+'}{Number(event.delta).toFixed(2)} days
                             </span>

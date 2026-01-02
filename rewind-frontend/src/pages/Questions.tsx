@@ -116,7 +116,7 @@ export default function Questions() {
         <div className="page">
             {/* Header with Overall Progress */}
             <div className="card mb-lg">
-                <div className="flex justify-between items-center mb-md">
+                <div className="flex justify-between items-center mb-md questions-header">
                     <div>
                         <h1 className="text-xl font-bold m-0">Questions</h1>
                         <p className="text-muted text-sm mt-xs">
@@ -124,7 +124,7 @@ export default function Questions() {
                         </p>
                     </div>
 
-                    <div className="flex gap-md">
+                    <div className="flex gap-md questions-filters">
                         {/* Filters */}
                         <select
                             className="input"

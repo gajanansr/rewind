@@ -1,6 +1,8 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
+import { useThemeStore } from './stores/themeStore';
 import Dashboard from './pages/Dashboard';
 import Questions from './pages/Questions';
 import Solve from './pages/Solve';
@@ -31,33 +33,119 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Navigation() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
+  const { theme, toggleTheme } = useThemeStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Apply theme on mount
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, []);
 
   if (!isAuthenticated) return null;
 
-  return (
-    <nav className="nav">
-      <NavLink to="/" className="nav-logo">
-        Rewind
-      </NavLink>
+  const handleSignOut = () => {
+    logout();
+    setMenuOpen(false);
+    navigate('/login');
+  };
 
-      <div className="nav-links">
-        <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Dashboard
+  const handleNavClick = () => {
+    setMenuOpen(false);
+  };
+
+  return (
+    <>
+      <nav className="nav">
+        <NavLink to="/" className="nav-logo">
+          Rewind
         </NavLink>
-        <NavLink to="/learn" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Learn
-        </NavLink>
-        <NavLink to="/questions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Questions
-        </NavLink>
-        <NavLink to="/revisions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Revisions
-        </NavLink>
-        <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          Profile
-        </NavLink>
+
+        {/* Desktop Navigation */}
+        <div className="nav-links desktop-nav">
+          <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/learn" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Learn
+          </NavLink>
+          <NavLink to="/questions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Questions
+          </NavLink>
+          <NavLink to="/revisions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Revisions
+          </NavLink>
+        </div>
+
+        {/* Right side controls */}
+        <div className="nav-actions">
+          {/* Theme Toggle */}
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          {/* Hamburger Menu Button */}
+          <button
+            className="menu-toggle"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className={`hamburger ${menuOpen ? 'open' : ''}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Panel */}
+      <div className={`menu-panel ${menuOpen ? 'open' : ''}`}>
+        <div className="menu-panel-content">
+          <div className="menu-links">
+            <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+              📊 Dashboard
+            </NavLink>
+            <NavLink to="/learn" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+              📚 Learn
+            </NavLink>
+            <NavLink to="/questions" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+              ❓ Questions
+            </NavLink>
+            <NavLink to="/revisions" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+              🔄 Revisions
+            </NavLink>
+            <NavLink to="/profile" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+              👤 Profile
+            </NavLink>
+          </div>
+
+          {/* Bottom section */}
+          <div className="menu-bottom">
+            <div className="menu-theme-toggle" onClick={toggleTheme}>
+              <span>{theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+            </div>
+            <button className="menu-signout" onClick={handleSignOut}>
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
       </div>
-    </nav>
+
+      {/* Overlay */}
+      {menuOpen && <div className="menu-overlay" onClick={() => setMenuOpen(false)} />}
+    </>
   );
 }
 

@@ -227,7 +227,7 @@ export default function Solve() {
 
             {/* Question Header */}
             <div className="card mb-lg">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center solve-header">
                     <div>
                         <h1>{question.title}</h1>
                         <div className="flex gap-sm mt-sm">
