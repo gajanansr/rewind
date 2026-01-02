@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { patternConfig, getPatternResource, PATTERN_ORDER } from '../config/patternConfig';
@@ -7,6 +7,7 @@ import type { PatternInfo } from '../api/client';
 export default function Learn() {
     const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
     const [selectedPatternId, setSelectedPatternId] = useState<string | null>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
 
     const { data: patterns = [], isLoading } = useQuery({
         queryKey: ['patterns'],
@@ -19,6 +20,10 @@ export default function Learn() {
     const handlePatternSelect = (pattern: PatternInfo) => {
         setSelectedPattern(pattern.name);
         setSelectedPatternId(pattern.id);
+        // Scroll to content on mobile after a short delay for state update
+        setTimeout(() => {
+            contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     };
 
     return (
@@ -64,7 +69,7 @@ export default function Learn() {
                 </div>
 
                 {/* Content - Right Side */}
-                <div className="learn-content">
+                <div className="learn-content" ref={contentRef}>
                     {!selectedPattern ? (
                         <div className="learn-empty">
                             <div className="learn-empty-icon">📖</div>

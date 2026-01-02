@@ -1303,6 +1303,24 @@ textarea.input {
 .col-id {
   font-family: var(--font-mono);
   font-size: 0.875rem;
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.col-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-status {
+  flex-shrink: 0;
+  width: 32px;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .question-row.completed .col-title {
@@ -1312,6 +1330,7 @@ textarea.input {
 
 .col-meta {
   font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .badge-pill {
@@ -1388,9 +1407,9 @@ textarea.input {
 /* ===== MOBILE RESPONSIVENESS (Global) ===== */
 @media (max-width: 768px) {
 
-  /* Reduce container padding on mobile */
+  /* Increase container padding on mobile */
   .app-container {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg);
   }
 
   /* Stack cards vertically with less gap */
