@@ -1409,7 +1409,7 @@ textarea.input {
 
   /* Increase container padding on mobile */
   .app-container {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-sm);
   }
 
   /* Stack cards vertically with better padding */
@@ -1511,7 +1511,7 @@ textarea.input {
 /* ===== SMALL MOBILE (< 480px) ===== */
 @media (max-width: 480px) {
   .app-container {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-sm);
   }
 
   .card {
