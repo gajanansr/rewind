@@ -32,8 +32,10 @@ public class UserQuestionService {
         var existing = userQuestionRepository.findByUserIdAndQuestionId(user.getId(), questionId);
         if (existing.isPresent()) {
             UserQuestion uq = existing.get();
+            // If already started or completed, just return the existing record
+            // This allows users to re-visit/re-solve questions
             if (uq.getStatus() != UserQuestion.Status.NOT_STARTED) {
-                throw new IllegalStateException("Question already started or completed");
+                return uq;
             }
             uq.start();
             // Update pattern stats
