@@ -92,6 +92,7 @@ public class UserQuestionController {
         }
 
         @PostMapping("/{questionId}/start")
+        @Transactional
         public ResponseEntity<UserQuestionResponse> startQuestion(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID questionId) {
