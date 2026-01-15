@@ -595,6 +595,15 @@ export default function Solve() {
                         </div>
                     )}
 
+                    {!analyzeMutation.isPending && aiFeedback.length === 0 && (
+                        <div className="card mb-lg text-center" style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
+                            <p className="text-muted" style={{ margin: 0 }}>
+                                🤖 AI feedback will appear here after analysis.
+                                Check back later or re-solve for personalized tips!
+                            </p>
+                        </div>
+                    )}
+
                     {aiFeedback.length > 0 && (
                         <div className="mb-lg" style={{ textAlign: 'left' }}>
                             <h3 className="mb-md" style={{ textAlign: 'center' }}>🤖 AI Feedback</h3>

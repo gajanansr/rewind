@@ -170,6 +170,11 @@ public class GeminiService {
 
     private String callGemini(String prompt) {
         try {
+            // Log API key status (not the key itself)
+            log.info("Calling Gemini API, key configured: {}, key length: {}",
+                    apiKey != null && !apiKey.isEmpty(),
+                    apiKey != null ? apiKey.length() : 0);
+
             String url = GEMINI_API_URL + "?key=" + apiKey;
 
             HttpHeaders headers = new HttpHeaders();
@@ -185,11 +190,18 @@ public class GeminiService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
+            log.info("Gemini API response status: {}", response.getStatusCode());
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return extractTextFromResponse(response.getBody());
+                String text = extractTextFromResponse(response.getBody());
+                log.info("Gemini returned text of length: {}", text != null ? text.length() : 0);
+                return text;
+            } else {
+                log.warn("Gemini API returned non-OK status or empty body: {}", response.getStatusCode());
             }
         } catch (Exception e) {
-            log.error("Error calling Gemini API: {}", e.getMessage());
+            log.error("Error calling Gemini API: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }
