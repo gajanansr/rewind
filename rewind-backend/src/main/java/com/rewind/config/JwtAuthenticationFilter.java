@@ -40,7 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
-    private ECPublicKey cachedPublicKey;
+    // Cache keys by kid (key ID) to support multiple/rotated keys
+    private Map<String, ECPublicKey> cachedKeys = new HashMap<>();
     private long cacheExpiry = 0;
     private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
@@ -98,9 +99,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private Claims validateToken(String token) {
         try {
-            ECPublicKey publicKey = getPublicKey();
+            // Extract kid from JWT header to find the correct public key
+            String kid = extractKidFromToken(token);
+            if (kid == null) {
+                logger.error("Could not extract kid from token header");
+                return null;
+            }
+            logger.debug("Token kid: " + kid);
+
+            ECPublicKey publicKey = getPublicKeyByKid(kid);
             if (publicKey == null) {
-                logger.error("Could not get public key from Supabase");
+                logger.error("Could not get public key for kid: " + kid);
                 return null;
             }
 
@@ -115,15 +124,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
 
-    private ECPublicKey getPublicKey() {
-        // Use cached key if still valid
-        if (cachedPublicKey != null && System.currentTimeMillis() < cacheExpiry) {
-            logger.debug("Using cached public key");
-            return cachedPublicKey;
+    private String extractKidFromToken(String token) {
+        try {
+            // JWT format: header.payload.signature - we only need the header
+            String[] parts = token.split("\\.");
+            if (parts.length < 2) {
+                return null;
+            }
+            String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]));
+            @SuppressWarnings("unchecked")
+            Map<String, Object> header = objectMapper.readValue(headerJson, Map.class);
+            return (String) header.get("kid");
+        } catch (Exception e) {
+            logger.error("Error extracting kid from token: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private ECPublicKey getPublicKeyByKid(String kid) {
+        // Refresh cache if expired
+        if (System.currentTimeMillis() >= cacheExpiry) {
+            refreshKeyCache();
         }
 
+        // Return key from cache
+        ECPublicKey key = cachedKeys.get(kid);
+        if (key == null) {
+            // Key not in cache, try refreshing once more
+            logger.info("Key not found for kid: " + kid + ", refreshing cache...");
+            refreshKeyCache();
+            key = cachedKeys.get(kid);
+        }
+        return key;
+    }
+
+    private void refreshKeyCache() {
         try {
-            // Fetch JWKS from Supabase
             String jwksUrl = supabaseUrl + "/auth/v1/.well-known/jwks.json";
             logger.info("Fetching JWKS from: " + jwksUrl);
 
@@ -137,7 +173,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (response.statusCode() != 200) {
                 logger.error("Failed to fetch JWKS: " + response.statusCode() + " - Body: " + response.body());
-                return null;
+                return;
             }
 
             @SuppressWarnings("unchecked")
@@ -147,46 +183,58 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (keys == null || keys.isEmpty()) {
                 logger.error("No keys found in JWKS");
-                return null;
+                return;
             }
 
-            // Get the first key (signing key)
-            Map<String, Object> key = keys.get(0);
-            String kty = (String) key.get("kty");
+            // Cache ALL keys by their kid
+            Map<String, ECPublicKey> newCache = new HashMap<>();
+            for (Map<String, Object> keyData : keys) {
+                String keyKid = (String) keyData.get("kid");
+                String kty = (String) keyData.get("kty");
 
-            if (!"EC".equals(kty)) {
-                logger.error("Unexpected key type: " + kty);
-                return null;
+                if (!"EC".equals(kty)) {
+                    logger.warn("Skipping non-EC key: " + keyKid);
+                    continue;
+                }
+
+                try {
+                    ECPublicKey publicKey = buildECPublicKey(keyData);
+                    newCache.put(keyKid, publicKey);
+                    logger.info("Cached key with kid: " + keyKid);
+                } catch (Exception e) {
+                    logger.error("Error building key for kid " + keyKid + ": " + e.getMessage());
+                }
             }
 
-            String xStr = (String) key.get("x");
-            String yStr = (String) key.get("y");
-
-            byte[] xBytes = Base64.getUrlDecoder().decode(xStr);
-            byte[] yBytes = Base64.getUrlDecoder().decode(yStr);
-
-            BigInteger x = new BigInteger(1, xBytes);
-            BigInteger y = new BigInteger(1, yBytes);
-
-            // P-256 curve parameters
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
-            java.security.spec.ECGenParameterSpec ecSpec = new java.security.spec.ECGenParameterSpec("secp256r1");
-            java.security.AlgorithmParameters params = java.security.AlgorithmParameters.getInstance("EC");
-            params.init(ecSpec);
-            ECParameterSpec ecParams = params.getParameterSpec(ECParameterSpec.class);
-
-            ECPoint point = new ECPoint(x, y);
-            ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, ecParams);
-            cachedPublicKey = (ECPublicKey) keyFactory.generatePublic(pubKeySpec);
+            cachedKeys = newCache;
             cacheExpiry = System.currentTimeMillis() + CACHE_DURATION_MS;
-
-            logger.info("Successfully fetched and cached Supabase public key");
-            return cachedPublicKey;
+            logger.info("Successfully cached " + newCache.size() + " keys from JWKS");
 
         } catch (Exception e) {
-            logger.error("Error fetching public key: " + e.getMessage());
-            return null;
+            logger.error("Error refreshing key cache: " + e.getMessage());
         }
+    }
+
+    private ECPublicKey buildECPublicKey(Map<String, Object> keyData) throws Exception {
+        String xStr = (String) keyData.get("x");
+        String yStr = (String) keyData.get("y");
+
+        byte[] xBytes = Base64.getUrlDecoder().decode(xStr);
+        byte[] yBytes = Base64.getUrlDecoder().decode(yStr);
+
+        BigInteger x = new BigInteger(1, xBytes);
+        BigInteger y = new BigInteger(1, yBytes);
+
+        // P-256 curve parameters
+        KeyFactory keyFactory = KeyFactory.getInstance("EC");
+        java.security.spec.ECGenParameterSpec ecSpec = new java.security.spec.ECGenParameterSpec("secp256r1");
+        java.security.AlgorithmParameters params = java.security.AlgorithmParameters.getInstance("EC");
+        params.init(ecSpec);
+        ECParameterSpec ecParams = params.getParameterSpec(ECParameterSpec.class);
+
+        ECPoint point = new ECPoint(x, y);
+        ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, ecParams);
+        return (ECPublicKey) keyFactory.generatePublic(pubKeySpec);
     }
 
     @SuppressWarnings("unchecked")
