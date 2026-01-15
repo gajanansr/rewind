@@ -118,21 +118,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private ECPublicKey getPublicKey() {
         // Use cached key if still valid
         if (cachedPublicKey != null && System.currentTimeMillis() < cacheExpiry) {
+            logger.debug("Using cached public key");
             return cachedPublicKey;
         }
 
         try {
             // Fetch JWKS from Supabase
             String jwksUrl = supabaseUrl + "/auth/v1/.well-known/jwks.json";
+            logger.info("Fetching JWKS from: " + jwksUrl);
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(jwksUrl))
                     .GET()
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            logger.info("JWKS response status: " + response.statusCode());
 
             if (response.statusCode() != 200) {
-                logger.error("Failed to fetch JWKS: " + response.statusCode());
+                logger.error("Failed to fetch JWKS: " + response.statusCode() + " - Body: " + response.body());
                 return null;
             }
 
