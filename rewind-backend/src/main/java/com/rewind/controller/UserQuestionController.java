@@ -101,6 +101,7 @@ public class UserQuestionController {
         }
 
         @GetMapping("/{questionId}/history")
+        @Transactional(readOnly = true)
         public ResponseEntity<QuestionHistoryResponse> getQuestionHistory(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID questionId) {
