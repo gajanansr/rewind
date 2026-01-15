@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -76,6 +77,7 @@ public class RecordingController {
          * Analyze a recording and generate AI feedback.
          */
         @PostMapping("/{recordingId}/analyze")
+        @Transactional(readOnly = true)
         public ResponseEntity<Map<String, Object>> analyzeRecording(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
@@ -115,6 +117,7 @@ public class RecordingController {
          * Get existing AI feedback for a recording.
          */
         @GetMapping("/{recordingId}/feedback")
+        @Transactional(readOnly = true)
         public ResponseEntity<List<Map<String, Object>>> getFeedback(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
