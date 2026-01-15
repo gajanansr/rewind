@@ -15,6 +15,8 @@ spring:
 
   main:
     lazy-initialization: true
+  jmx:
+    enabled: false
 
   jpa:
     open-in-view: false

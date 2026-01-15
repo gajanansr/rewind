@@ -74,10 +74,14 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- WebClient for external APIs (Gemini, Supabase) -->
+        <!-- WebClient for external APIs (Gemini, Supabase) - NO Netty server -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
         </dependency>
 
         <!-- Flyway for migrations -->
