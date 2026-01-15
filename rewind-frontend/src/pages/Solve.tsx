@@ -317,8 +317,8 @@ export default function Solve() {
                     )}
 
                     {/* AI Feedback from previous analysis */}
-                    {history?.userQuestion?.id && (
-                        <AIFeedbackSection userQuestionId={history.userQuestion.id} />
+                    {latestRecording?.id && (
+                        <AIFeedbackSection recordingId={latestRecording.id} />
                     )}
 
                     {/* Actions */}
@@ -650,24 +650,19 @@ export default function Solve() {
     );
 }
 
-// Component to fetch and display AI feedback for a user question
-function AIFeedbackSection({ userQuestionId }: { userQuestionId: string }) {
+// Component to fetch and display AI feedback for a recording
+function AIFeedbackSection({ recordingId }: { recordingId: string }) {
     const { data: feedback, isLoading } = useQuery({
-        queryKey: ['ai-feedback', userQuestionId],
+        queryKey: ['ai-feedback', recordingId],
         queryFn: async () => {
-            // Try to get the latest recording for this user question
-            const history = await api.getQuestionHistory(userQuestionId);
-            if (history.recordings?.[0]?.id) {
-                try {
-                    const result = await api.getFeedback(history.recordings[0].id);
-                    return result.feedback || [];
-                } catch {
-                    return [];
-                }
+            try {
+                const result = await api.getFeedback(recordingId);
+                return result.feedback || [];
+            } catch {
+                return [];
             }
-            return [];
         },
-        enabled: !!userQuestionId,
+        enabled: !!recordingId,
         retry: false,
     });
 
