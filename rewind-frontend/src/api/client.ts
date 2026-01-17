@@ -28,6 +28,17 @@ class ApiClient {
         });
 
         if (!response.ok) {
+            // Auto-logout on 401 (Unauthorized) or 403 (Forbidden) - token expired or invalid
+            if (response.status === 401 || response.status === 403) {
+                console.warn('Token expired or invalid, logging out...');
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('auth-storage');
+                // Redirect to login
+                window.location.href = '/login';
+                throw new Error('Session expired. Please log in again.');
+            }
+
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
             throw new Error(error.message || `HTTP ${response.status}`);
         }
