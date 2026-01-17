@@ -5,6 +5,7 @@ import com.rewind.model.*;
 import com.rewind.repository.ExplanationRecordingRepository;
 import com.rewind.repository.SolutionRepository;
 import com.rewind.service.GeminiService;
+import com.rewind.service.TranscriptService;
 import com.rewind.service.UserQuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ public class RecordingController {
 
         private final UserQuestionService userQuestionService;
         private final GeminiService geminiService;
+        private final TranscriptService transcriptService;
         private final SolutionRepository solutionRepository;
         private final ExplanationRecordingRepository recordingRepository;
 
@@ -77,7 +79,7 @@ public class RecordingController {
          * Analyze a recording and generate AI feedback.
          */
         @PostMapping("/{recordingId}/analyze")
-        @Transactional(readOnly = true)
+        @Transactional
         public ResponseEntity<Map<String, Object>> analyzeRecording(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
@@ -92,8 +94,16 @@ public class RecordingController {
                 String code = latestSolution.map(Solution::getCode).orElse("");
                 String language = latestSolution.map(Solution::getLanguage).orElse("python");
 
-                // Generate AI feedback
+                // Generate AI feedback for solution
                 List<AIFeedback> feedbackList = geminiService.analyzeSolution(userQuestion, code, language);
+
+                // Transcribe audio if not already transcribed
+                if ((recording.getTranscript() == null || recording.getTranscript().isEmpty())
+                                && recording.getAudioUrl() != null && !recording.getAudioUrl().isEmpty()) {
+                        transcriptService.transcribeRecording(recordingId);
+                        // Reload recording to get the transcript
+                        recording = recordingRepository.findById(recordingId).orElse(recording);
+                }
 
                 // If we have a transcript, also analyze communication
                 if (recording.getTranscript() != null && !recording.getTranscript().isEmpty()) {
