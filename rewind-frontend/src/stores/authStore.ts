@@ -12,12 +12,14 @@ interface AuthState {
     user: User | null;
     accessToken: string | null;
     isAuthenticated: boolean;
+    isHydrated: boolean; // Track hydration state
 
     // Actions
     setAuth: (user: User, token: string) => void;
     logout: () => void;
     signOut: () => void; // Alias for logout
     checkAuth: () => boolean;
+    setHydrated: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             accessToken: null,
             isAuthenticated: false,
+            isHydrated: false,
 
             setAuth: (user, token) => {
                 localStorage.setItem('access_token', token);
@@ -34,6 +37,8 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('auth-storage');
                 set({ user: null, accessToken: null, isAuthenticated: false });
             },
 
@@ -48,6 +53,8 @@ export const useAuthStore = create<AuthState>()(
                 }
                 return !!token;
             },
+
+            setHydrated: () => set({ isHydrated: true }),
         }),
         {
             name: 'rewind-auth',
@@ -56,6 +63,10 @@ export const useAuthStore = create<AuthState>()(
                 accessToken: state.accessToken,
                 isAuthenticated: state.isAuthenticated
             }),
+            onRehydrateStorage: () => (state) => {
+                // Called when storage is rehydrated
+                state?.setHydrated();
+            },
         }
     )
 );

@@ -23,6 +23,16 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  // Wait for auth state to hydrate from localStorage
+  if (!isHydrated) {
+    return (
+      <div className="page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div className="text-muted">Loading...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
