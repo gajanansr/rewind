@@ -8,6 +8,7 @@ import com.rewind.service.GeminiService;
 import com.rewind.service.TranscriptService;
 import com.rewind.service.UserQuestionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/recordings")
 @RequiredArgsConstructor
+@Slf4j
 public class RecordingController {
 
         private final UserQuestionService userQuestionService;
@@ -106,11 +108,19 @@ public class RecordingController {
                 }
 
                 // If we have a transcript, also analyze communication
-                if (recording.getTranscript() != null && !recording.getTranscript().isEmpty()) {
-                        AIFeedback commTip = geminiService.analyzeTranscript(userQuestion, recording.getTranscript());
+                String transcript = recording.getTranscript();
+                log.info("Transcript for recording {}: length={}", recordingId,
+                                transcript != null ? transcript.length() : 0);
+
+                if (transcript != null && transcript.length() > 20) { // Only analyze if meaningful transcript
+                        log.info("Analyzing transcript: {}",
+                                        transcript.substring(0, Math.min(100, transcript.length())));
+                        AIFeedback commTip = geminiService.analyzeTranscript(userQuestion, transcript);
                         if (commTip != null) {
                                 feedbackList.add(commTip);
                         }
+                } else {
+                        log.info("Skipping communication analysis - transcript too short or missing");
                 }
 
                 return ResponseEntity.ok(Map.of(
