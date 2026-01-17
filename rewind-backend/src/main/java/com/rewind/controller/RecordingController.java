@@ -100,11 +100,15 @@ public class RecordingController {
                 List<AIFeedback> feedbackList = geminiService.analyzeSolution(userQuestion, code, language);
 
                 // Transcribe audio if not already transcribed
+                log.info("Recording {} audioUrl: {}", recordingId, recording.getAudioUrl());
                 if ((recording.getTranscript() == null || recording.getTranscript().isEmpty())
                                 && recording.getAudioUrl() != null && !recording.getAudioUrl().isEmpty()) {
+                        log.info("Attempting transcription for recording {}", recordingId);
                         transcriptService.transcribeRecording(recordingId);
                         // Reload recording to get the transcript
                         recording = recordingRepository.findById(recordingId).orElse(recording);
+                        log.info("After transcription, transcript length: {}",
+                                        recording.getTranscript() != null ? recording.getTranscript().length() : 0);
                 }
 
                 // If we have a transcript, also analyze communication
