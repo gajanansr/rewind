@@ -185,7 +185,7 @@ public class GeminiService {
                             "parts", List.of(Map.of("text", prompt)))),
                     "generationConfig", Map.of(
                             "temperature", 0.7,
-                            "maxOutputTokens", 300));
+                            "maxOutputTokens", 1000));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
