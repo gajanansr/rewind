@@ -31,10 +31,10 @@ class ApiClient {
             // Auto-logout on 401 (Unauthorized) or 403 (Forbidden) - token expired or invalid
             if (response.status === 401 || response.status === 403) {
                 console.warn('Token expired or invalid, logging out...');
+                // Clear all auth-related storage (Zustand uses 'rewind-auth')
+                localStorage.removeItem('rewind-auth');
                 localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('auth-storage');
-                // Redirect to login
+                // Redirect to login with full page reload to reset React state
                 window.location.href = '/login';
                 throw new Error('Session expired. Please log in again.');
             }

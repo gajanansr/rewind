@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
@@ -15,25 +15,7 @@ export default function Login() {
     const [message, setMessage] = useState('');
 
     const setAuth = useAuthStore((state) => state.setAuth);
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-    const isHydrated = useAuthStore((state) => state.isHydrated);
     const navigate = useNavigate();
-
-    // Redirect already authenticated users to dashboard
-    useEffect(() => {
-        if (isHydrated && isAuthenticated) {
-            navigate('/', { replace: true });
-        }
-    }, [isHydrated, isAuthenticated, navigate]);
-
-    // Show loading while hydrating to prevent flash
-    if (!isHydrated) {
-        return (
-            <div className="page" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="text-muted">Loading...</div>
-            </div>
-        );
-    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
