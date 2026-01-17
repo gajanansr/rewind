@@ -4,14 +4,13 @@ import com.rewind.model.ExplanationRecording;
 import com.rewind.repository.ExplanationRecordingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URL;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,10 +21,10 @@ public class TranscriptService {
     private final ExplanationRecordingRepository recordingRepository;
     private final RestTemplate restTemplate;
 
-    @Value("${openai.api-key:}")
-    private String openAiApiKey;
+    @Value("${gemini.api-key:}")
+    private String geminiApiKey;
 
-    private static final String WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
+    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
     public TranscriptService(ExplanationRecordingRepository recordingRepository) {
         this.recordingRepository = recordingRepository;
@@ -33,12 +32,12 @@ public class TranscriptService {
     }
 
     /**
-     * Transcribe audio from a URL using OpenAI Whisper API.
+     * Transcribe audio from a URL using Gemini API.
      * Returns the transcript text or null if transcription fails.
      */
     public String transcribe(String audioUrl) {
-        if (openAiApiKey == null || openAiApiKey.isEmpty()) {
-            log.warn("OpenAI API key not configured, skipping transcription");
+        if (geminiApiKey == null || geminiApiKey.isEmpty()) {
+            log.warn("Gemini API key not configured, skipping transcription");
             return null;
         }
 
@@ -50,33 +49,60 @@ public class TranscriptService {
                 return null;
             }
 
-            // Prepare multipart request
+            // Convert to base64
+            String audioBase64 = Base64.getEncoder().encodeToString(audioBytes);
+
+            // Determine MIME type
+            String mimeType = audioUrl.contains(".webm") ? "audio/webm" : "audio/mpeg";
+
+            // Build Gemini request with audio
+            Map<String, Object> requestBody = Map.of(
+                    "contents", List.of(Map.of(
+                            "parts", List.of(
+                                    Map.of(
+                                            "inline_data", Map.of(
+                                                    "mime_type", mimeType,
+                                                    "data", audioBase64)),
+                                    Map.of("text",
+                                            "Transcribe this audio exactly. Just output the transcription, nothing else.")))),
+                    "generationConfig", Map.of(
+                            "temperature", 0.1,
+                            "maxOutputTokens", 2000));
+
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            headers.setBearerAuth(openAiApiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("file", new ByteArrayResource(audioBytes) {
-                @Override
-                public String getFilename() {
-                    return "audio.webm";
-                }
-            });
-            body.add("model", "whisper-1");
-            body.add("language", "en");
+            String url = GEMINI_API_URL + "?key=" + geminiApiKey;
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+            log.info("Calling Gemini API for transcription, audio size: {} bytes", audioBytes.length);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    WHISPER_API_URL,
-                    request,
-                    Map.class);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return (String) response.getBody().get("text");
+                String transcript = extractTextFromResponse(response.getBody());
+                log.info("Transcription successful, length: {}", transcript != null ? transcript.length() : 0);
+                return transcript;
             }
         } catch (Exception e) {
-            log.error("Error transcribing audio: {}", e.getMessage());
+            log.error("Error transcribing audio with Gemini: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractTextFromResponse(Map<String, Object> response) {
+        try {
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+            if (candidates != null && !candidates.isEmpty()) {
+                Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+                if (parts != null && !parts.isEmpty()) {
+                    return (String) parts.get(0).get("text");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error parsing Gemini response: {}", e.getMessage());
         }
         return null;
     }
