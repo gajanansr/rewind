@@ -113,7 +113,7 @@ public class GeminiService {
 
     private String buildSolutionPrompt(String title, String pattern, String difficulty, String code, String language) {
         return """
-                You are an expert DSA interview coach. Analyze this solution and provide actionable feedback.
+                You are an expert DSA interview coach. Analyze this solution and provide concise, actionable feedback.
 
                 **Problem:** %s
                 **Pattern:** %s
@@ -127,10 +127,10 @@ public class GeminiService {
 
                 Provide a brief, encouraging response covering:
                 1. **What's Good:** One thing done well
-                2. **Improvement:** One specific suggestion to make the code cleaner or more efficient
-                3. **Edge Case:** One edge case to consider
+                2. **Improvement:** Specific suggestions to make the code cleaner or more efficient
+                3. **Optimizable:** Let user know if this can be optimised further
 
-                Keep response under 150 words. Be friendly and constructive.
+                Keep response under 150 words. Be strict and constructive.
                 """.formatted(title, pattern, difficulty, language, language, code);
     }
 
@@ -159,10 +159,10 @@ public class GeminiService {
                 **Transcript:**
                 %s
 
-                Provide ONE specific tip to improve their explanation for a FAANG interview.
+                Provide multiple specific tip to improve their explanation for a FAANG interview.
                 Focus on: clarity, structure, pacing, or technical vocabulary.
 
-                Keep under 50 words. Be encouraging.
+                Keep under 100 words. Be strict and constructive.
                 """.formatted(title, transcript);
     }
 
