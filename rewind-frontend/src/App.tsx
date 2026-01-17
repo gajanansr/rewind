@@ -43,6 +43,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Navigation() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
   const logout = useAuthStore((state) => state.logout);
   const { theme, toggleTheme } = useThemeStore();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -58,7 +59,8 @@ function Navigation() {
     setMenuOpen(false);
   }, []);
 
-  if (!isAuthenticated) return null;
+  // Don't render navbar until hydration is complete AND user is authenticated
+  if (!isHydrated || !isAuthenticated) return null;
 
   const handleSignOut = () => {
     logout();
