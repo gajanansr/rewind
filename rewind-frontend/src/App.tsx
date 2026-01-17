@@ -81,6 +81,9 @@ function Navigation() {
           <NavLink to="/revisions" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             Revisions
           </NavLink>
+          <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            Profile
+          </NavLink>
         </div>
 
         {/* Right side controls */}
