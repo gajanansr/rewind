@@ -2,6 +2,7 @@ package com.rewind.repository;
 
 import com.rewind.model.RevisionSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -22,4 +23,11 @@ public interface RevisionScheduleRepository extends JpaRepository<RevisionSchedu
 
     @Query("SELECT COUNT(rs) FROM RevisionSchedule rs WHERE rs.user.id = :userId AND rs.completedAt IS NOT NULL")
     long countCompletedByUserId(UUID userId);
+
+    @Modifying
+    @Query("DELETE FROM RevisionSchedule rs WHERE rs.user.id = :userId")
+    void deleteByUserId(UUID userId);
+
+    @Query("SELECT rs.id FROM RevisionSchedule rs WHERE rs.user.id = :userId")
+    List<UUID> findIdsByUserId(UUID userId);
 }

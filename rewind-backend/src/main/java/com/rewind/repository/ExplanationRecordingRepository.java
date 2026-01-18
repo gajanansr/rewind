@@ -2,6 +2,7 @@ package com.rewind.repository;
 
 import com.rewind.model.ExplanationRecording;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -19,4 +20,8 @@ public interface ExplanationRecordingRepository extends JpaRepository<Explanatio
 
     @Query("SELECT COALESCE(MAX(er.version), 0) FROM ExplanationRecording er WHERE er.userQuestion.id = :userQuestionId")
     int findMaxVersionByUserQuestionId(UUID userQuestionId);
+
+    @Modifying
+    @Query("DELETE FROM ExplanationRecording er WHERE er.userQuestion.id IN :userQuestionIds")
+    void deleteByUserQuestionIdIn(List<UUID> userQuestionIds);
 }

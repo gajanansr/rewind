@@ -2,11 +2,7 @@ package com.rewind.controller;
 
 import com.rewind.dto.QuestionDTO.*;
 import com.rewind.model.*;
-import com.rewind.repository.ExplanationRecordingRepository;
-import com.rewind.repository.ReadinessEventRepository;
-import com.rewind.repository.SolutionRepository;
-import com.rewind.repository.UserQuestionRepository;
-import com.rewind.repository.UserRepository;
+import com.rewind.repository.*;
 import com.rewind.service.UserQuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +27,11 @@ public class UserQuestionController {
         private final UserRepository userRepository;
         private final SolutionRepository solutionRepository;
         private final ExplanationRecordingRepository recordingRepository;
+        private final AIFeedbackRepository aiFeedbackRepository;
+        private final RevisionScheduleRepository revisionScheduleRepository;
+        private final RevisionSessionRepository revisionSessionRepository;
+        private final UserPatternStatsRepository userPatternStatsRepository;
+        private final ReadinessSnapshotRepository readinessSnapshotRepository;
 
         @GetMapping
         public ResponseEntity<List<UserQuestionResponse>> getMyQuestions(
@@ -143,13 +144,52 @@ public class UserQuestionController {
         @DeleteMapping("/reset")
         @Transactional
         public ResponseEntity<Void> resetProgress(@AuthenticationPrincipal User user) {
-                // Delete all user questions
-                userQuestionRepository.deleteByUserId(user.getId());
+                UUID userId = user.getId();
 
-                // Delete all readiness events
-                readinessEventRepository.deleteByUserId(user.getId());
+                // Get user question IDs first (needed for child table deletions)
+                List<UUID> userQuestionIds = userQuestionRepository.findIdsByUserId(userId);
 
-                // Reset user stats
+                // Get revision schedule IDs (needed for revision sessions)
+                List<UUID> revisionScheduleIds = revisionScheduleRepository.findIdsByUserId(userId);
+
+                // Delete in correct order (child tables first due to foreign keys)
+
+                // 1. Delete revision sessions (references revision_schedules)
+                if (!revisionScheduleIds.isEmpty()) {
+                        revisionSessionRepository.deleteByRevisionScheduleIdIn(revisionScheduleIds);
+                }
+
+                // 2. Delete revision schedules (references user_questions)
+                revisionScheduleRepository.deleteByUserId(userId);
+
+                // 3. Delete AI feedback (references user_questions)
+                if (!userQuestionIds.isEmpty()) {
+                        aiFeedbackRepository.deleteByUserQuestionIdIn(userQuestionIds);
+                }
+
+                // 4. Delete solutions (references user_questions)
+                if (!userQuestionIds.isEmpty()) {
+                        solutionRepository.deleteByUserQuestionIdIn(userQuestionIds);
+                }
+
+                // 5. Delete explanation recordings (references user_questions)
+                if (!userQuestionIds.isEmpty()) {
+                        recordingRepository.deleteByUserQuestionIdIn(userQuestionIds);
+                }
+
+                // 6. Delete user questions
+                userQuestionRepository.deleteByUserId(userId);
+
+                // 7. Delete readiness events
+                readinessEventRepository.deleteByUserId(userId);
+
+                // 8. Delete readiness snapshots
+                readinessSnapshotRepository.deleteByUserId(userId);
+
+                // 9. Delete user pattern stats
+                userPatternStatsRepository.deleteByUserId(userId);
+
+                // Reset user's readiness days to target
                 user.setCurrentReadinessDays(user.getInterviewTargetDays());
                 userRepository.save(user);
 

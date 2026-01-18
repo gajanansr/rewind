@@ -2,6 +2,7 @@ package com.rewind.repository;
 
 import com.rewind.model.Solution;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +17,8 @@ public interface SolutionRepository extends JpaRepository<Solution, UUID> {
 
     @Query("SELECT s FROM Solution s WHERE s.userQuestion.id = :userQuestionId ORDER BY s.createdAt DESC LIMIT 1")
     Optional<Solution> findLatestByUserQuestionId(UUID userQuestionId);
+
+    @Modifying
+    @Query("DELETE FROM Solution s WHERE s.userQuestion.id IN :userQuestionIds")
+    void deleteByUserQuestionIdIn(List<UUID> userQuestionIds);
 }
