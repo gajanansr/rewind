@@ -108,7 +108,7 @@ function Navigation() {
             aria-label="Toggle theme"
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            {theme === 'dark' ? <Sun color='white' size={20} /> : <Moon size={20} />}
           </button>
 
           {/* Hamburger Menu Button */}
