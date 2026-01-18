@@ -83,19 +83,28 @@ export default function Profile() {
             {/* Support Developer Section */}
             <div className="card mb-lg" style={{ borderColor: 'var(--color-accent-soft)' }}>
                 <div className="flex items-start gap-md">
-                    <div style={{ fontSize: '1.5rem' }}>💖</div>
+                    <div style={{ fontSize: '1.5rem' }}>☕</div>
                     <div className="flex-1">
                         <h3 className="font-bold mb-sm">Support the Developer</h3>
                         <p className="text-muted mb-md profile-support-text">
-                            Rewind is a labor of love. If you find it valuable, consider supporting the development!
+                            Rewind is a labor of love. If you find it valuable, consider buying me a coffee!
                         </p>
                         <a
-                            href="https://razorpay.me/@gajananrathod"
+                            href="https://www.buymeacoffee.com/gajanansr"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-primary"
+                            className="btn"
+                            style={{
+                                background: '#5F7FFF',
+                                color: '#ffffff',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 'var(--spacing-sm)',
+                                fontFamily: 'Cookie, cursive',
+                                fontSize: '1.1rem'
+                            }}
                         >
-                            Support via Razorpay →
+                            ☕ Buy me a coffee
                         </a>
                     </div>
                 </div>
