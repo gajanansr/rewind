@@ -11,7 +11,9 @@ import Revisions from './pages/Revisions';
 import Learn from './pages/Learn';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import './styles/index.css';
+import './styles/landing.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +42,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+// Home route shows Landing for unauthenticated, Dashboard for authenticated
+function HomeRoute() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  // Wait for auth state to hydrate
+  if (!isHydrated) {
+    return (
+      <div className="page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <div className="text-muted">Loading...</div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <Dashboard /> : <Landing />;
 }
 
 function Navigation() {
@@ -177,8 +196,13 @@ function App() {
 
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/landing" element={<Landing />} />
 
             <Route path="/" element={
+              <HomeRoute />
+            } />
+
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
