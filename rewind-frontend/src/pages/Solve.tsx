@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { RefreshCw } from 'lucide-react';
 
 type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
@@ -331,8 +332,9 @@ export default function Solve() {
                             className="btn btn-primary btn-lg"
                             onClick={handleSolveAgain}
                             disabled={isLoading}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                         >
-                            🔄 Solve Again
+                            <RefreshCw size={18} /> Solve Again
                         </button>
                     </div>
                 </div>

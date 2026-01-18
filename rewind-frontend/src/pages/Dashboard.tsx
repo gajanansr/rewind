@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { TrendingUp, TrendingDown, ArrowRight, Flame } from 'lucide-react';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 
 // Question distribution in the 169-question set
@@ -80,13 +81,13 @@ export default function Dashboard() {
     const getSpeedMessage = () => {
         switch (displayData.trend) {
             case 'IMPROVING':
-                return { text: 'GOD SPEED! Keep it up! 🔥', color: 'var(--color-success)' };
+                return { text: 'GOD SPEED! Keep it up!', icon: Flame, color: 'var(--color-success)' };
             case 'STABLE':
                 return { text: 'Steady Player. Try to solve 1+ daily!', color: 'var(--color-warning)' };
             case 'SLOWING':
                 return { text: 'Slowing down? Gave up on dreams?', color: 'var(--color-error)' };
             default:
-                return { text: '', color: 'inherit' };
+                return { text: '', icon: null, color: 'inherit' };
         }
     };
 
@@ -106,13 +107,14 @@ export default function Dashboard() {
                     </p>
 
                     <div className={`readiness-trend ${displayData.trend.toLowerCase()}`}>
-                        {displayData.trend === 'IMPROVING' && '📈'}
-                        {displayData.trend === 'STABLE' && '➡️'}
-                        {displayData.trend === 'SLOWING' && '📉'}
+                        {displayData.trend === 'IMPROVING' && <TrendingUp size={18} />}
+                        {displayData.trend === 'STABLE' && <ArrowRight size={18} />}
+                        {displayData.trend === 'SLOWING' && <TrendingDown size={18} />}
                         {' '}{displayData.trend}
                     </div>
 
-                    <p className="speed-message" style={{ color: speedMessage.color }}>
+                    <p className="speed-message" style={{ color: speedMessage.color, display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                        {speedMessage.icon && <speedMessage.icon size={16} />}
                         {speedMessage.text}
                     </p>
 

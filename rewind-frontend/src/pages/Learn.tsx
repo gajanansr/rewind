@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { patternConfig, getPatternResource, PATTERN_ORDER } from '../config/patternConfig';
 import type { PatternInfo } from '../api/client';
+import { BookMarked, Construction, Check } from 'lucide-react';
 
 export default function Learn() {
     const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export default function Learn() {
                                         disabled={!hasResource}
                                     >
                                         <span className="pattern-name">{pattern.name}</span>
-                                        {hasResource && <span className="pattern-check">📚</span>}
+                                        {hasResource && <span className="pattern-check"><Check size={16} /></span>}
                                     </button>
                                 );
                             })}
@@ -72,7 +73,7 @@ export default function Learn() {
                 <div className="learn-content" ref={contentRef}>
                     {!selectedPattern ? (
                         <div className="learn-empty">
-                            <div className="learn-empty-icon">📖</div>
+                            <div className="learn-empty-icon"><BookMarked size={48} strokeWidth={1.5} /></div>
                             <h2>Select a Pattern</h2>
                             <p className="text-muted">
                                 Choose a pattern from the left to view learning materials
@@ -122,7 +123,7 @@ export default function Learn() {
                         </div>
                     ) : (
                         <div className="learn-empty">
-                            <div className="learn-empty-icon">🚧</div>
+                            <div className="learn-empty-icon"><Construction size={48} strokeWidth={1.5} /></div>
                             <h2>Coming Soon</h2>
                             <p className="text-muted">
                                 Learning materials for {selectedPattern} are being prepared

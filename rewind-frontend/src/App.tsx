@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
+import { LayoutDashboard, BookOpen, HelpCircle, RefreshCw, User, Sun, Moon, LogOut } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Questions from './pages/Questions';
 import Solve from './pages/Solve';
@@ -107,7 +108,7 @@ function Navigation() {
             aria-label="Toggle theme"
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
           {/* Hamburger Menu Button */}
@@ -130,29 +131,32 @@ function Navigation() {
         <div className="menu-panel-content">
           <div className="menu-links">
             <NavLink to="/" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
-              📊 Dashboard
+              <LayoutDashboard size={18} /> Dashboard
             </NavLink>
             <NavLink to="/learn" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
-              📚 Learn
+              <BookOpen size={18} /> Learn
             </NavLink>
             <NavLink to="/questions" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
-              ❓ Questions
+              <HelpCircle size={18} /> Questions
             </NavLink>
             <NavLink to="/revisions" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
-              🔄 Revisions
+              <RefreshCw size={18} /> Revisions
             </NavLink>
             <NavLink to="/profile" onClick={handleNavClick} className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
-              👤 Profile
+              <User size={18} /> Profile
             </NavLink>
           </div>
 
           {/* Bottom section */}
           <div className="menu-bottom">
             <div className="menu-theme-toggle" onClick={toggleTheme}>
-              <span>{theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </span>
             </div>
             <button className="menu-signout" onClick={handleSignOut}>
-              🚪 Sign Out
+              <LogOut size={18} /> Sign Out
             </button>
           </div>
         </div>

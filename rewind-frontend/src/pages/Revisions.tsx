@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { RevisionScheduleResponse } from '../api/client';
+import { AlertTriangle, Clock, BarChart2, Target, Play, Pause, Check } from 'lucide-react';
 
 export default function Revisions() {
     const [selectedRevision, setSelectedRevision] = useState<RevisionScheduleResponse | null>(null);
@@ -32,9 +33,9 @@ export default function Revisions() {
 
     const getReasonLabel = (reason: string) => {
         switch (reason) {
-            case 'LOW_CONFIDENCE': return '⚠️ Low confidence';
-            case 'TIME_DECAY': return '⏰ Time to revisit';
-            case 'PATTERN_WEAKNESS': return '📊 Pattern weakness';
+            case 'LOW_CONFIDENCE': return <><AlertTriangle size={14} /> Low confidence</>;
+            case 'TIME_DECAY': return <><Clock size={14} /> Time to revisit</>;
+            case 'PATTERN_WEAKNESS': return <><BarChart2 size={14} /> Pattern weakness</>;
             default: return reason;
         }
     };
@@ -84,7 +85,7 @@ export default function Revisions() {
                 <div className="text-center text-muted">Loading revisions...</div>
             ) : revisions.length === 0 ? (
                 <div className="card text-center" style={{ padding: 'var(--spacing-2xl)' }}>
-                    <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🎯</div>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}><Target size={48} strokeWidth={1.5} /></div>
                     <h2>No Revisions Today</h2>
                     <p className="text-muted mt-md">
                         You're all caught up! Keep solving new problems to build your revision queue.
@@ -144,7 +145,7 @@ export default function Revisions() {
                                                 className="btn btn-primary btn-icon"
                                                 onClick={(e) => handlePlayPause(e, revision.lastRecording?.audioUrl)}
                                             >
-                                                {isPlaying ? '⏸️' : '▶️'}
+                                                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
                                             </button>
                                             <div className="progress-bar" style={{ flex: 1 }}>
                                                 <div className="progress-bar-fill" style={{ width: isPlaying ? '30%' : '0%' }} />
@@ -178,7 +179,7 @@ export default function Revisions() {
                                             onClick={(e) => handleMarkReviewed(e, revision.scheduleId)}
                                             disabled={completeMutation.isPending}
                                         >
-                                            {completeMutation.isPending ? 'Saving...' : 'Mark as Reviewed ✓'}
+                                            {completeMutation.isPending ? 'Saving...' : <><Check size={16} /> Mark as Reviewed</>}
                                         </button>
                                     </div>
                                 </div>

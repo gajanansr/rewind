@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/client';
 import { startOfDay, differenceInDays } from 'date-fns';
+import { Coffee, AlertTriangle } from 'lucide-react';
 
 export default function Profile() {
     const { user, signOut } = useAuthStore();
@@ -83,7 +84,7 @@ export default function Profile() {
             {/* Support Developer Section */}
             <div className="card mb-lg" style={{ borderColor: 'var(--color-accent-soft)' }}>
                 <div className="flex items-start gap-md">
-                    <div style={{ fontSize: '1.5rem' }}>☕</div>
+                    <div><Coffee size={24} /></div>
                     <div className="flex-1">
                         <h3 className="font-bold mb-sm">Support the Developer</h3>
                         <p className="text-muted mb-md profile-support-text">
@@ -104,7 +105,7 @@ export default function Profile() {
                                 fontSize: '1.1rem'
                             }}
                         >
-                            ☕ Buy me a coffee
+                            <Coffee size={18} /> Buy me a coffee
                         </a>
                     </div>
                 </div>
@@ -171,7 +172,7 @@ export default function Profile() {
                         style={{ maxWidth: '400px', width: '90%' }}
                         onClick={e => e.stopPropagation()}
                     >
-                        <h3 className="text-xl font-bold mb-md text-error" style={{ color: 'var(--color-error)' }}>⚠️ Hard Reset</h3>
+                        <h3 className="text-xl font-bold mb-md text-error" style={{ color: 'var(--color-error)', display: 'flex', alignItems: 'center', gap: '8px' }}><AlertTriangle size={20} /> Hard Reset</h3>
                         <p className="mb-md">
                             Are you absolutely sure? This will permanently delete:
                         </p>
