@@ -14,7 +14,7 @@ export const patternConfig: Record<string, PatternResource> = {
 
     "Two Pointers": {
         name: "Two Pointers",
-        youtubeUrl: "https://www.youtube-nocookie.com/embed/y2d0VHdvfdc",
+        youtubeUrl: "https://www.youtube-nocookie.com/embed/QzZ7nmouLTI?si=OrS8ajhFlbBin9ZA",
         theory: "Two Pointers is used when you need to scan a list efficiently using two indices instead of nested loops. Place pointers at strategic positions (start/end or slow/fast) and move them based on conditions.",
         keyPoints: [
             "Best for sorted arrays or pair comparisons",
