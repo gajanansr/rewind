@@ -1,205 +1,261 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
     Target,
     Calendar,
-    TrendingUp,
-    RefreshCw,
-    BookOpen,
     Code2,
     Mic,
     Sparkles,
-    ChevronRight,
-    Brain,
-    CheckCircle2,
-    ArrowRight
+    RefreshCw,
+    ArrowRight,
+    Play,
+    ChevronDown,
+    Coffee
 } from 'lucide-react';
+
+// Register ScrollTrigger plugin
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Landing() {
     const navigate = useNavigate();
+    const [daysCount, setDaysCount] = useState(90);
+    const sectionRef = useRef<HTMLElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    const features = [
+    // Animate countdown
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDaysCount(prev => prev <= 45 ? 45 : prev - 1);
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
+
+    // GSAP ScrollTrigger horizontal scroll
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const ctx = gsap.context(() => {
+                const container = containerRef.current;
+                const section = sectionRef.current;
+                if (!container || !section) return;
+
+                // Get scroll distance based on actual content width
+                const getScrollDistance = () => container.scrollWidth - window.innerWidth;
+
+                gsap.to(container, {
+                    x: () => -getScrollDistance(),
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: section,
+                        pin: true,
+                        pinSpacing: true,
+                        scrub: 1,
+                        start: 'top top',
+                        end: () => `+=${getScrollDistance()}`,
+                        anticipatePin: 1,
+                        invalidateOnRefresh: true,
+                        snap: {
+                            snapTo: 1 / 5,
+                            duration: 0.3,
+                            ease: 'power1.inOut'
+                        }
+                    }
+                });
+            });
+
+            return () => ctx.revert();
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    const steps = [
         {
             icon: Target,
             title: "Set Your Goal",
-            description: "Choose your timeline - 30, 60, 90, or 120 days. We'll create a personalized roadmap to get you interview-ready."
+            desc: "Pick your timeline. We'll create a personalized path to interview readiness.",
+            color: "#6366f1",
+            visual: (
+                <div className="card-visual">
+                    <div className="goal-buttons">
+                        <span className="goal-btn">30 days</span>
+                        <span className="goal-btn active">90 days</span>
+                        <span className="goal-btn">120 days</span>
+                    </div>
+                </div>
+            )
         },
         {
             icon: Calendar,
-            title: "Dynamic Target Date",
-            description: "Watch your target date adjust as you progress. Solve more, reach your goal faster. Skip days? We'll recalculate."
-        },
-        {
-            icon: TrendingUp,
-            title: "Track Your Progress",
-            description: "Visualize your journey with beautiful progress charts. Know exactly where you stand at any moment."
-        },
-        {
-            icon: BookOpen,
-            title: "Pattern-Based Learning",
-            description: "169 curated problems organized by 14 core patterns. Master the building blocks of DSA."
+            title: "Track Progress",
+            desc: "Every solved problem brings your ready date closer. Stay consistent.",
+            color: "#8b5cf6",
+            visual: (
+                <div className="card-visual">
+                    <div className="countdown-display">
+                        <span className="countdown-num">{daysCount}</span>
+                        <span className="countdown-label">days left</span>
+                    </div>
+                </div>
+            )
         },
         {
             icon: Code2,
-            title: "Solve & Paste",
-            description: "Solve on LeetCode, paste your solution here. We'll track everything and analyze your approach."
+            title: "Solve Problems",
+            desc: "169 curated problems across 21 patterns. Real interview questions.",
+            color: "#a855f7",
+            visual: (
+                <div className="card-visual code-visual">
+                    <code>def twoSum(nums):</code>
+                    <code>  seen = {"{}"}</code>
+                    <code>  for i, n in nums:</code>
+                    <code className="cursor">▊</code>
+                </div>
+            )
         },
         {
             icon: Mic,
-            title: "Think Out Loud",
-            description: "Record yourself explaining your solution. Practice the critical interview skill of verbal communication."
+            title: "Explain Out Loud",
+            desc: "Record your thought process. The skill that wins interviews.",
+            color: "#d946ef",
+            visual: (
+                <div className="card-visual">
+                    <div className="wave-visual">
+                        {[30, 70, 100, 60, 80, 40, 90, 50].map((h, i) => (
+                            <div key={i} className="wave-bar" style={{ height: `${h}%` }} />
+                        ))}
+                    </div>
+                </div>
+            )
         },
         {
             icon: Sparkles,
-            title: "AI Feedback",
-            description: "Get instant feedback on your solution's optimality and your communication clarity. Improve with every attempt."
+            title: "Get AI Feedback",
+            desc: "Instant analysis of your code and explanation. Know what to improve.",
+            color: "#ec4899",
+            visual: (
+                <div className="card-visual feedback-visual">
+                    <div className="feedback-line good">✓ O(n) time complexity</div>
+                    <div className="feedback-line warn">↑ Explain space usage</div>
+                    <div className="feedback-line good">✓ Clear explanation</div>
+                </div>
+            )
         },
         {
             icon: RefreshCw,
-            title: "Smart Revisions",
-            description: "Spaced repetition powered by AI. We'll remind you to revisit problems before you forget them."
+            title: "Revise & Master",
+            desc: "Spaced repetition ensures you remember. Long-term mastery, not cramming.",
+            color: "#f43f5e",
+            visual: (
+                <div className="card-visual">
+                    <div className="revision-visual">
+                        <span className="rev-day done">Day 1 ✓</span>
+                        <span className="rev-day done">Day 3 ✓</span>
+                        <span className="rev-day current">Day 7</span>
+                        <span className="rev-day">Day 14</span>
+                    </div>
+                </div>
+            )
         }
-    ];
-
-    const journey = [
-        { step: 1, text: "Set your interview timeline" },
-        { step: 2, text: "Learn patterns through video explanations" },
-        { step: 3, text: "Solve curated problems" },
-        { step: 4, text: "Record your verbal explanation" },
-        { step: 5, text: "Get AI feedback on approach & communication" },
-        { step: 6, text: "Revise intelligently at optimal intervals" },
-        { step: 7, text: "Track progress as your target date approaches" },
     ];
 
     return (
         <div className="landing">
-            {/* Hero Section */}
+            {/* Navbar */}
+            <nav className="landing-nav">
+                <div className="landing-nav-content">
+                    <div className="landing-logo">
+                        <span className="logo-icon">↻</span>
+                        <span className="logo-text">Rewind</span>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => navigate('/login')}>
+                        Get Started
+                    </button>
+                </div>
+            </nav>
+
+            {/* Hero */}
             <section className="landing-hero">
-                <div className="landing-hero-content">
-                    <div className="landing-badge">
-                        <Brain size={16} />
-                        <span>AI-Powered Interview Prep</span>
-                    </div>
+                <h1 className="hero-title">
+                    Stop <span className="strike">memorizing</span>
+                    <br />
+                    Start <span className="highlight">understanding</span>
+                </h1>
+                <p className="hero-subtitle">
+                    The interview prep that actually works. Set a goal, solve problems, explain your thinking, get AI feedback.
+                </p>
+                <button className="btn btn-primary btn-xl hero-cta" onClick={() => navigate('/login')}>
+                    <Play size={20} />
+                    Start Your Journey
+                </button>
+                <button className="scroll-hint" onClick={() => sectionRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+                    <ChevronDown size={24} />
+                    <span>See how it works</span>
+                </button>
+            </section>
 
-                    <h1 className="landing-title">
-                        Master DSA.
-                        <br />
-                        <span className="landing-title-accent">Crack FAANG.</span>
-                    </h1>
-
-                    <p className="landing-subtitle">
-                        The intelligent way to prepare for coding interviews.
-                        Set a goal, solve curated problems, practice thinking out loud,
-                        and get AI feedback on your solutions.
-                    </p>
-
-                    <div className="landing-hero-cta">
-                        <button
-                            className="btn btn-primary btn-xl"
-                            onClick={() => navigate('/login')}
-                        >
-                            Start Your Journey
-                            <ArrowRight size={20} />
-                        </button>
-                        <p className="landing-cta-note">Free to use. No credit card required.</p>
-                    </div>
-                </div>
-
-                <div className="landing-hero-visual">
-                    <div className="landing-hero-card">
-                        <div className="landing-countdown">
-                            <span className="landing-countdown-number">43</span>
-                            <span className="landing-countdown-label">days to FAANG ready</span>
-                        </div>
-                        <div className="landing-progress-demo">
-                            <div className="landing-progress-bar">
-                                <div className="landing-progress-fill" style={{ width: '68%' }} />
+            {/* Horizontal Scroll Section */}
+            <section className="horizontal-section" ref={sectionRef}>
+                <h2 className="section-title">The Process That Works</h2>
+                <div className="horizontal-wrapper">
+                    <div className="horizontal-cards" ref={containerRef}>
+                        {steps.map((step, i) => (
+                            <div key={i} className="h-card">
+                                <div className="h-card-visual">
+                                    {step.visual}
+                                </div>
+                                <div className="h-card-info">
+                                    <div className="h-card-icon" style={{ background: step.color }}>
+                                        <step.icon size={24} color="white" />
+                                    </div>
+                                    <div className="h-card-step">Step {i + 1}</div>
+                                    <h3 className="h-card-title">{step.title}</h3>
+                                    <p className="h-card-desc">{step.desc}</p>
+                                </div>
                             </div>
-                            <span className="landing-progress-text">68% complete</span>
-                        </div>
-                        <div className="landing-trend">
-                            <TrendingUp size={18} className="text-success" />
-                            <span>IMPROVING - Keep it up!</span>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
-            {/* Journey Section */}
-            <section className="landing-journey">
-                <h2 className="landing-section-title">Your Path to Success</h2>
-                <p className="landing-section-subtitle">A structured approach to interview mastery</p>
-
-                <div className="landing-journey-steps">
-                    {journey.map((item, index) => (
-                        <div key={item.step} className="landing-journey-step">
-                            <div className="landing-journey-number">{item.step}</div>
-                            <div className="landing-journey-text">{item.text}</div>
-                            {index < journey.length - 1 && (
-                                <ChevronRight size={20} className="landing-journey-arrow" />
-                            )}
-                        </div>
-                    ))}
+            {/* Values */}
+            <section className="landing-values">
+                <div className="value-item">
+                    <div className="value-number">169</div>
+                    <div className="value-label">Curated problems</div>
                 </div>
-            </section>
-
-            {/* Features Grid */}
-            <section className="landing-features">
-                <h2 className="landing-section-title">Everything You Need</h2>
-                <p className="landing-section-subtitle">Tools designed for interview success</p>
-
-                <div className="landing-features-grid">
-                    {features.map((feature) => (
-                        <div key={feature.title} className="landing-feature-card">
-                            <div className="landing-feature-icon">
-                                <feature.icon size={24} />
-                            </div>
-                            <h3 className="landing-feature-title">{feature.title}</h3>
-                            <p className="landing-feature-description">{feature.description}</p>
-                        </div>
-                    ))}
+                <div className="value-item">
+                    <div className="value-number">21</div>
+                    <div className="value-label">Core patterns</div>
                 </div>
-            </section>
-
-            {/* Stats Section */}
-            <section className="landing-stats">
-                <div className="landing-stat">
-                    <span className="landing-stat-number">169</span>
-                    <span className="landing-stat-label">Curated Problems</span>
-                </div>
-                <div className="landing-stat">
-                    <span className="landing-stat-number">14</span>
-                    <span className="landing-stat-label">Core Patterns</span>
-                </div>
-                <div className="landing-stat">
-                    <span className="landing-stat-number">90</span>
-                    <span className="landing-stat-label">Days Average</span>
+                <div className="value-item">
+                    <div className="value-number">AI</div>
+                    <div className="value-label">Powered feedback</div>
                 </div>
             </section>
 
             {/* Final CTA */}
-            <section className="landing-final-cta">
-                <div className="landing-final-cta-content">
-                    <CheckCircle2 size={48} className="landing-final-icon" />
-                    <h2>Ready to Get Started?</h2>
-                    <p>Join hundreds of developers preparing smarter, not harder.</p>
-                    <button
-                        className="btn btn-primary btn-xl"
-                        onClick={() => navigate('/login')}
-                    >
-                        Start Free
-                        <ArrowRight size={20} />
-                    </button>
-                </div>
+            <section className="landing-final">
+                <h2>Ready to actually prepare?</h2>
+                <p>Free to use. No credit card required.</p>
+                <button className="btn btn-primary btn-xl" onClick={() => navigate('/login')}>
+                    Start Now <ArrowRight size={20} />
+                </button>
             </section>
 
             {/* Footer */}
             <footer className="landing-footer">
-                <p>Built with ❤️ for aspiring engineers</p>
-                <p className="landing-footer-links">
-                    <a href="https://www.buymeacoffee.com/gajanansr" target="_blank" rel="noopener noreferrer">
-                        Support the Project
+                <div className="footer-content">
+                    <div className="footer-left">
+                        <div className="footer-brand">↻ Rewind</div>
+                        <p className="footer-tagline">Master DSA. Crack FAANG.</p>
+                    </div>
+                    <a href="https://www.buymeacoffee.com/gajanansr" target="_blank" rel="noopener noreferrer" className="footer-support">
+                        <Coffee size={16} /> Buy me a coffee
                     </a>
-                </p>
+                </div>
+                <div className="footer-bottom">© 2024 Rewind</div>
             </footer>
         </div>
     );
