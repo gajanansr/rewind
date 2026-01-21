@@ -333,7 +333,7 @@ export default function Solve() {
                             className="btn btn-primary btn-lg"
                             onClick={handleSolveAgain}
                             disabled={isLoading}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
                         >
                             <RefreshCw size={18} /> Solve Again
                         </button>

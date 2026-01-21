@@ -142,7 +142,7 @@ public class RecordingController {
          */
         @GetMapping("/{recordingId}/feedback")
         @Transactional(readOnly = true)
-        public ResponseEntity<List<Map<String, Object>>> getFeedback(
+        public ResponseEntity<Map<String, Object>> getFeedback(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
 
@@ -151,12 +151,13 @@ public class RecordingController {
 
                 List<AIFeedback> feedbackList = geminiService.getFeedback(recording.getUserQuestion());
 
-                return ResponseEntity.ok(feedbackList.stream()
-                                .map(f -> Map.<String, Object>of(
-                                                "id", f.getId(),
-                                                "type", f.getFeedbackType().name(),
-                                                "message", f.getMessage(),
-                                                "createdAt", f.getCreatedAt()))
-                                .collect(Collectors.toList()));
+                return ResponseEntity.ok(Map.of(
+                                "feedback", feedbackList.stream()
+                                                .map(f -> Map.<String, Object>of(
+                                                                "id", f.getId(),
+                                                                "type", f.getFeedbackType().name(),
+                                                                "message", f.getMessage(),
+                                                                "createdAt", f.getCreatedAt()))
+                                                .collect(Collectors.toList())));
         }
 }
