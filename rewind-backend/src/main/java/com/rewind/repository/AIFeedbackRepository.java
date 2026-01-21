@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface AIFeedbackRepository extends JpaRepository<AIFeedback, UUID> {
     List<AIFeedback> findByUserQuestionIdOrderByCreatedAtDesc(UUID userQuestionId);
 
+    List<AIFeedback> findByRecordingIdOrderByCreatedAtDesc(UUID recordingId);
+
     @Modifying
     @Query("DELETE FROM AIFeedback af WHERE af.userQuestion.id IN :userQuestionIds")
     void deleteByUserQuestionIdIn(List<UUID> userQuestionIds);

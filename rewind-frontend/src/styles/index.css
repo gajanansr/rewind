@@ -1631,3 +1631,114 @@ textarea.input {
 .ai-feedback-content h3 {
   font-size: 0.95rem;
 }
+
+/* Audio Player Styles */
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.08);
+  border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.2);
+  border-radius: var(--radius-lg);
+  width: 100%;
+}
+
+.audio-player-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.audio-player-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  background: var(--color-primary-dark, #2563eb);
+}
+
+.audio-player-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audio-player-progress {
+  flex: 1;
+  position: relative;
+  height: 6px;
+}
+
+.audio-player-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right,
+      var(--color-primary) 0%,
+      var(--color-primary) var(--progress, 0%),
+      rgba(var(--color-primary-rgb, 59, 130, 246), 0.2) var(--progress, 0%),
+      rgba(var(--color-primary-rgb, 59, 130, 246), 0.2) 100%);
+  cursor: pointer;
+  outline: none;
+}
+
+.audio-player-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.audio-player-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.audio-player-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.audio-player-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audio-player-time {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  min-width: 70px;
+  justify-content: center;
+}
+
+.audio-player-separator {
+  opacity: 0.5;
+}
+
+.audio-player-volume-icon {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}

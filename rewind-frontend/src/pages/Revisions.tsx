@@ -1,15 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { RevisionScheduleResponse } from '../api/client';
-import { AlertTriangle, Clock, BarChart2, Target, Play, Pause, Check } from 'lucide-react';
+import { AlertTriangle, Clock, BarChart2, Target, Check, Bot, Lightbulb, HelpCircle, MessageCircle } from 'lucide-react';
 import Markdown from 'react-markdown';
+import AudioPlayer from '../components/AudioPlayer';
 
 export default function Revisions() {
     const [selectedRevision, setSelectedRevision] = useState<RevisionScheduleResponse | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -41,21 +40,6 @@ export default function Revisions() {
         }
     };
 
-    const handlePlayPause = (e: React.MouseEvent, audioUrl?: string) => {
-        e.stopPropagation();
-        if (audioRef.current && audioUrl) {
-            if (isPlaying) {
-                audioRef.current.pause();
-            } else {
-                audioRef.current.src = audioUrl;
-                audioRef.current.play();
-            }
-            setIsPlaying(!isPlaying);
-        } else {
-            setIsPlaying(!isPlaying);
-        }
-    };
-
     const handleReRecord = (e: React.MouseEvent, questionId: string) => {
         e.stopPropagation();
         navigate(`/solve/${questionId}`);
@@ -74,13 +58,6 @@ export default function Revisions() {
                 Listen to your past explanations and reinforce your understanding.
                 Re-record if you can explain it better now.
             </p>
-
-            {/* Hidden audio element for playback */}
-            <audio
-                ref={audioRef}
-                onEnded={() => setIsPlaying(false)}
-                style={{ display: 'none' }}
-            />
 
             {isLoading ? (
                 <div className="text-center text-muted">Loading revisions...</div>
@@ -137,21 +114,11 @@ export default function Revisions() {
 
                                     {/* Audio player */}
                                     {revision.lastRecording?.audioUrl ? (
-                                        <div className="flex items-center gap-md mb-lg" style={{
-                                            background: 'var(--color-bg-secondary)',
-                                            padding: 'var(--spacing-md)',
-                                            borderRadius: 'var(--radius-md)'
-                                        }}>
-                                            <button
-                                                className="btn btn-primary btn-icon"
-                                                onClick={(e) => handlePlayPause(e, revision.lastRecording?.audioUrl)}
-                                            >
-                                                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-                                            </button>
-                                            <div className="progress-bar" style={{ flex: 1 }}>
-                                                <div className="progress-bar-fill" style={{ width: isPlaying ? '30%' : '0%' }} />
-                                            </div>
-                                            <span className="text-muted" style={{ fontSize: '0.875rem' }}>
+                                        <div className="mb-lg">
+                                            <AudioPlayer
+                                                src={revision.lastRecording.audioUrl}
+                                            />
+                                            <span className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: 'var(--spacing-xs)' }}>
                                                 Version {revision.lastRecording?.version}
                                             </span>
                                         </div>
@@ -225,7 +192,7 @@ function RevisionAIFeedback({ recordingId }: { recordingId: string }) {
 
     return (
         <div className="mb-lg">
-            <h4 className="mb-md">🤖 AI Feedback</h4>
+            <h4 className="mb-md" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Bot size={18} />AI Feedback</h4>
             <div className="flex flex-col gap-sm">
                 {feedback.map((fb, i) => (
                     <div key={i} style={{
@@ -238,10 +205,10 @@ function RevisionAIFeedback({ recordingId }: { recordingId: string }) {
                         padding: 'var(--spacing-sm) var(--spacing-md)',
                     }}>
                         <div className="flex gap-sm items-center mb-xs">
-                            <span style={{ fontSize: '1rem' }}>
-                                {fb.type === 'HINT' && '💡'}
-                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
-                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                            <span>
+                                {fb.type === 'HINT' && <Lightbulb size={18} />}
+                                {fb.type === 'REFLECTION_QUESTION' && <HelpCircle size={18} />}
+                                {fb.type === 'COMMUNICATION_TIP' && <MessageCircle size={18} />}
                             </span>
                             <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>
                                 {fb.type === 'HINT' && 'Solution Feedback'}

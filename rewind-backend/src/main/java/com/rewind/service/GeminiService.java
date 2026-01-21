@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -33,7 +34,8 @@ public class GeminiService {
     /**
      * Analyze a solution and generate AI feedback.
      */
-    public List<AIFeedback> analyzeSolution(UserQuestion userQuestion, String code, String language) {
+    public List<AIFeedback> analyzeSolution(UserQuestion userQuestion, com.rewind.model.ExplanationRecording recording,
+            String code, String language) {
         if (apiKey == null || apiKey.isEmpty()) {
             log.warn("Gemini API key not configured, skipping analysis");
             return List.of();
@@ -53,6 +55,7 @@ public class GeminiService {
         if (solutionFeedback != null) {
             AIFeedback hint = AIFeedback.builder()
                     .userQuestion(userQuestion)
+                    .recording(recording)
                     .feedbackType(AIFeedback.FeedbackType.HINT)
                     .message(solutionFeedback)
                     .build();
@@ -68,6 +71,7 @@ public class GeminiService {
         if (reflectionFeedback != null) {
             AIFeedback reflection = AIFeedback.builder()
                     .userQuestion(userQuestion)
+                    .recording(recording)
                     .feedbackType(AIFeedback.FeedbackType.REFLECTION_QUESTION)
                     .message(reflectionFeedback)
                     .build();
@@ -80,7 +84,8 @@ public class GeminiService {
     /**
      * Analyze a transcript and provide communication tips.
      */
-    public AIFeedback analyzeTranscript(UserQuestion userQuestion, String transcript) {
+    public AIFeedback analyzeTranscript(UserQuestion userQuestion, com.rewind.model.ExplanationRecording recording,
+            String transcript) {
         if (apiKey == null || apiKey.isEmpty()) {
             log.warn("Gemini API key not configured, skipping transcript analysis");
             return null;
@@ -94,6 +99,7 @@ public class GeminiService {
         if (feedback != null) {
             AIFeedback tip = AIFeedback.builder()
                     .userQuestion(userQuestion)
+                    .recording(recording)
                     .feedbackType(AIFeedback.FeedbackType.COMMUNICATION_TIP)
                     .message(feedback)
                     .build();
@@ -103,7 +109,14 @@ public class GeminiService {
     }
 
     /**
-     * Get all feedback for a user question.
+     * Get feedback for a specific recording.
+     */
+    public List<AIFeedback> getFeedbackByRecording(UUID recordingId) {
+        return feedbackRepository.findByRecordingIdOrderByCreatedAtDesc(recordingId);
+    }
+
+    /**
+     * Get all feedback for a user question (legacy, for backwards compatibility).
      */
     public List<AIFeedback> getFeedback(UserQuestion userQuestion) {
         return feedbackRepository.findByUserQuestionIdOrderByCreatedAtDesc(userQuestion.getId());

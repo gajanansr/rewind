@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Mic, FileCode, Bot, Lightbulb, HelpCircle, MessageCircle, PartyPopper, Circle, Square } from 'lucide-react';
 import Markdown from 'react-markdown';
+import AudioPlayer from '../components/AudioPlayer';
 
 type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
@@ -22,8 +23,6 @@ export default function Solve() {
     const [_recordingId, setRecordingId] = useState<string | null>(null);
     const [aiFeedback, setAiFeedback] = useState<Array<{ type: string; message: string }>>([]);
     const [error, setError] = useState<string | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const recorder = useAudioRecorder();
 
@@ -197,26 +196,10 @@ export default function Solve() {
         }
     };
 
-    const handlePlayAudio = (audioUrl: string) => {
-        if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.pause();
-                setIsPlaying(false);
-            } else {
-                audioRef.current.src = audioUrl;
-                audioRef.current.play();
-                setIsPlaying(true);
-            }
-        }
-    };
-
     const isLoading = startMutation.isPending || submitSolutionMutation.isPending || saveRecordingMutation.isPending;
 
     return (
         <div className="page">
-            {/* Hidden audio element */}
-            <audio ref={audioRef} onEnded={() => setIsPlaying(false)} style={{ display: 'none' }} />
-
             {/* Error Display */}
             {error && (
                 <div className="card mb-lg" style={{
@@ -262,7 +245,7 @@ export default function Solve() {
                     {latestSolution && (
                         <div className="card mb-md">
                             <div className="flex justify-between items-center mb-md">
-                                <h3>📝 Your Previous Solution</h3>
+                                <h3><FileCode size={18} style={{ display: 'inline', marginRight: '8px' }} />Your Previous Solution</h3>
                                 <span className="badge">{latestSolution.language}</span>
                             </div>
                             <div style={{
@@ -292,18 +275,11 @@ export default function Solve() {
                     {/* Previous Recording */}
                     {latestRecording && (
                         <div className="card mb-md">
-                            <h3 className="mb-md">🎙️ Your Previous Explanation</h3>
-                            <div className="flex gap-md items-center">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => handlePlayAudio(latestRecording.audioUrl)}
-                                >
-                                    {isPlaying ? '⏸️ Pause' : '▶️ Play'}
-                                </button>
-                                <span className="text-muted">
-                                    {formatTime(latestRecording.durationSeconds)} • Version {latestRecording.version}
-                                </span>
-                            </div>
+                            <h3 className="mb-md"><Mic size={18} style={{ display: 'inline', marginRight: '8px' }} />Your Previous Explanation</h3>
+                            <AudioPlayer src={latestRecording.audioUrl} />
+                            <span className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: 'var(--spacing-xs)' }}>
+                                {formatTime(latestRecording.durationSeconds)} • Version {latestRecording.version}
+                            </span>
                             {latestRecording.transcript && (
                                 <div className="mt-md" style={{
                                     background: 'var(--color-bg-tertiary)',
@@ -498,7 +474,7 @@ export default function Solve() {
                             className="btn btn-primary btn-lg"
                             onClick={recorder.startRecording}
                         >
-                            🎙️ Start Recording
+                            <Mic size={18} /> Start Recording
                         </button>
                     )}
 
@@ -510,13 +486,13 @@ export default function Solve() {
                                 marginBottom: 'var(--spacing-md)',
                                 color: 'var(--color-error)',
                             }}>
-                                ⏺️ {formatTime(recorder.duration)}
+                                <Circle size={16} fill="currentColor" /> {formatTime(recorder.duration)}
                             </div>
                             <button
                                 className="btn btn-secondary btn-lg"
                                 onClick={recorder.stopRecording}
                             >
-                                ⏹️ Stop Recording
+                                <Square size={16} fill="currentColor" /> Stop Recording
                             </button>
                         </div>
                     )}
@@ -584,7 +560,7 @@ export default function Solve() {
             {/* Step: Done */}
             {step === 'done' && (
                 <div className="card text-center" style={{ padding: 'var(--spacing-2xl)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: 'var(--spacing-md)' }}>🎉</div>
+                    <div style={{ marginBottom: 'var(--spacing-md)' }}><PartyPopper size={64} strokeWidth={1.5} /></div>
                     <h2 className="mb-md">Question Complete!</h2>
                     <p className="text-muted mb-lg">
                         Great job! Your solution and explanation have been saved.
@@ -594,14 +570,14 @@ export default function Solve() {
                     {/* AI Feedback Section */}
                     {analyzeMutation.isPending && (
                         <div className="text-muted mb-lg">
-                            <span>🤖 Analyzing your solution...</span>
+                            <span><Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />Analyzing your solution...</span>
                         </div>
                     )}
 
                     {!analyzeMutation.isPending && aiFeedback.length === 0 && (
                         <div className="card mb-lg text-center" style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
                             <p className="text-muted" style={{ margin: 0 }}>
-                                🤖 AI feedback will appear here after analysis.
+                                <Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />AI feedback will appear here after analysis.
                                 Check back later or re-solve for personalized tips!
                             </p>
                         </div>
@@ -609,7 +585,7 @@ export default function Solve() {
 
                     {aiFeedback.length > 0 && (
                         <div className="mb-lg" style={{ textAlign: 'left' }}>
-                            <h3 className="mb-md" style={{ textAlign: 'center' }}>🤖 AI Feedback</h3>
+                            <h3 className="mb-md" style={{ textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Bot size={20} />AI Feedback</h3>
                             <div className="flex flex-col gap-md">
                                 {aiFeedback.map((fb, i) => (
                                     <div key={i} className="card" style={{
@@ -622,10 +598,10 @@ export default function Solve() {
                                         padding: 'var(--spacing-md)',
                                     }}>
                                         <div className="flex gap-sm items-center mb-sm">
-                                            <span style={{ fontSize: '1.25rem' }}>
-                                                {fb.type === 'HINT' && '💡'}
-                                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
-                                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                                            <span>
+                                                {fb.type === 'HINT' && <Lightbulb size={20} />}
+                                                {fb.type === 'REFLECTION_QUESTION' && <HelpCircle size={20} />}
+                                                {fb.type === 'COMMUNICATION_TIP' && <MessageCircle size={20} />}
                                             </span>
                                             <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                                                 {fb.type === 'HINT' && 'Solution Feedback'}
@@ -692,7 +668,7 @@ function AIFeedbackSection({ recordingId }: { recordingId: string }) {
 
     return (
         <div className="card mb-md">
-            <h3 className="mb-md">🤖 AI Feedback</h3>
+            <h3 className="mb-md" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Bot size={20} />AI Feedback</h3>
             <div className="flex flex-col gap-md">
                 {feedback.map((fb, i) => (
                     <div key={i} style={{
@@ -705,10 +681,10 @@ function AIFeedbackSection({ recordingId }: { recordingId: string }) {
                         padding: 'var(--spacing-md)',
                     }}>
                         <div className="flex gap-sm items-center mb-sm">
-                            <span style={{ fontSize: '1.25rem' }}>
-                                {fb.type === 'HINT' && '💡'}
-                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
-                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                            <span>
+                                {fb.type === 'HINT' && <Lightbulb size={20} />}
+                                {fb.type === 'REFLECTION_QUESTION' && <HelpCircle size={20} />}
+                                {fb.type === 'COMMUNICATION_TIP' && <MessageCircle size={20} />}
                             </span>
                             <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>
                                 {fb.type === 'HINT' && 'Solution Feedback'}

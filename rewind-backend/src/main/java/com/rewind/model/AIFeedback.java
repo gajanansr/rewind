@@ -25,6 +25,10 @@ public class AIFeedback {
     @JoinColumn(name = "user_question_id", nullable = false)
     private UserQuestion userQuestion;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recording_id")
+    private ExplanationRecording recording;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "feedback_type", nullable = false, length = 30)
     private FeedbackType feedbackType;

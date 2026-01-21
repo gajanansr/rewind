@@ -97,7 +97,7 @@ public class RecordingController {
                 String language = latestSolution.map(Solution::getLanguage).orElse("python");
 
                 // Generate AI feedback for solution
-                List<AIFeedback> feedbackList = geminiService.analyzeSolution(userQuestion, code, language);
+                List<AIFeedback> feedbackList = geminiService.analyzeSolution(userQuestion, recording, code, language);
 
                 // Transcribe audio if not already transcribed
                 log.info("Recording {} audioUrl: {}", recordingId, recording.getAudioUrl());
@@ -119,7 +119,7 @@ public class RecordingController {
                 if (transcript != null && transcript.length() > 20) { // Only analyze if meaningful transcript
                         log.info("Analyzing transcript: {}",
                                         transcript.substring(0, Math.min(100, transcript.length())));
-                        AIFeedback commTip = geminiService.analyzeTranscript(userQuestion, transcript);
+                        AIFeedback commTip = geminiService.analyzeTranscript(userQuestion, recording, transcript);
                         if (commTip != null) {
                                 feedbackList.add(commTip);
                         }
@@ -146,10 +146,11 @@ public class RecordingController {
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
 
-                var recording = recordingRepository.findById(recordingId)
+                recordingRepository.findById(recordingId)
                                 .orElseThrow(() -> new RuntimeException("Recording not found"));
 
-                List<AIFeedback> feedbackList = geminiService.getFeedback(recording.getUserQuestion());
+                // Get feedback specific to this recording (or empty for legacy recordings)
+                List<AIFeedback> feedbackList = geminiService.getFeedbackByRecording(recordingId);
 
                 return ResponseEntity.ok(Map.of(
                                 "feedback", feedbackList.stream()
