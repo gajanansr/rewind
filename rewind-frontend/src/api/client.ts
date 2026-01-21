@@ -43,6 +43,22 @@ class ApiClient {
             throw new Error(error.message || `HTTP ${response.status}`);
         }
 
+        // Handle 204 No Content or empty bodies
+        if (response.status === 204) {
+            return null as unknown as T;
+        }
+
+        const contentLength = response.headers.get('content-length');
+        if (contentLength === '0') {
+            return null as unknown as T;
+        }
+
+        // Handle 202 Accepted which might not have a body
+        if (response.status === 202) {
+            const text = await response.text();
+            return (text ? JSON.parse(text) : null) as unknown as T;
+        }
+
         return response.json();
     }
 
