@@ -47,6 +47,7 @@ public class GeminiService {
      * + Communication Tips).
      */
     @org.springframework.scheduling.annotation.Async
+    @Transactional
     public void processRecording(UUID recordingId) {
         log.info("Starting async analysis for recording: {}", recordingId);
 
