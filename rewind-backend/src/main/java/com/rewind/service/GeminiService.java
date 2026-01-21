@@ -92,6 +92,19 @@ public class GeminiService {
             log.error("Async analysis failed for recording: {}", recordingId, e);
             recording.setAnalysisStatus(com.rewind.model.ExplanationRecording.AnalysisStatus.FAILED);
             recordingRepository.save(recording);
+
+            // Save error as feedback so user/dev can see it
+            try {
+                AIFeedback errorFeedback = AIFeedback.builder()
+                        .userQuestion(recording.getUserQuestion())
+                        .recording(recording)
+                        .feedbackType(AIFeedback.FeedbackType.HINT) // Use HINT so it shows up
+                        .message("⚠️ **Analysis Error**: " + e.getMessage())
+                        .build();
+                feedbackRepository.save(errorFeedback);
+            } catch (Exception persistenceEx) {
+                log.error("Failed to save error feedback", persistenceEx);
+            }
         }
     }
 
