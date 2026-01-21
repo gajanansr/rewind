@@ -33,6 +33,7 @@ public class RevisionDTO {
     @Data
     @Builder
     public static class RecordingInfo {
+        private UUID id;
         private Integer version;
         private String audioUrl;
         private Instant recordedAt;

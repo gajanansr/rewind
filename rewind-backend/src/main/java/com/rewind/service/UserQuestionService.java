@@ -3,11 +3,13 @@ package com.rewind.service;
 import com.rewind.model.*;
 import com.rewind.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserQuestionService {
@@ -124,14 +126,18 @@ public class UserQuestionService {
             uq.markDone(confidenceScore);
             userQuestionRepository.save(uq);
 
-            // Update pattern stats
-            updatePatternCompleted(user, uq.getQuestion().getPattern(), confidenceScore);
-
-            // Calculate readiness
-            readinessService.calculateQuestionCompletion(user, uq);
-
-            // Schedule initial revision
-            revisionService.scheduleInitialRevision(user, uq);
+            // Non-critical operations: wrapped in try-catch so recording saves even if
+            // these fail
+            try {
+                if (uq.getQuestion() != null && uq.getQuestion().getPattern() != null) {
+                    updatePatternCompleted(user, uq.getQuestion().getPattern(), confidenceScore);
+                }
+                readinessService.calculateQuestionCompletion(user, uq);
+                revisionService.scheduleInitialRevision(user, uq);
+            } catch (Exception e) {
+                log.error("Non-critical error during question completion for user {}: {}",
+                        user.getId(), e.getMessage(), e);
+            }
         }
 
         return recording;

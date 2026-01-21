@@ -107,8 +107,15 @@ public class RevisionService {
      */
     @Transactional
     public RevisionSchedule scheduleInitialRevision(User user, UserQuestion userQuestion) {
-        // Schedule first revision 3 days after completion
-        Instant scheduledAt = Instant.now().plus(3, ChronoUnit.DAYS);
+        // Idempotency: Check if revision already exists for this question
+        var existingSchedule = revisionScheduleRepository
+                .findFirstByUserQuestionIdAndCompletedAtIsNull(userQuestion.getId());
+        if (existingSchedule.isPresent()) {
+            return existingSchedule.get();
+        }
+
+        // Schedule first revision 1 day after completion (next day)
+        Instant scheduledAt = Instant.now().plus(1, ChronoUnit.DAYS);
 
         RevisionSchedule.Reason reason = userQuestion.getConfidenceScore() != null
                 && userQuestion.getConfidenceScore() <= 2

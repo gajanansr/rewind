@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -20,6 +21,8 @@ public interface RevisionScheduleRepository extends JpaRepository<RevisionSchedu
     List<RevisionSchedule> findDueByUserId(UUID userId, Instant now);
 
     boolean existsByUserQuestionIdAndCompletedAtIsNull(UUID userQuestionId);
+
+    Optional<RevisionSchedule> findFirstByUserQuestionIdAndCompletedAtIsNull(UUID userQuestionId);
 
     @Query("SELECT COUNT(rs) FROM RevisionSchedule rs WHERE rs.user.id = :userId AND rs.completedAt IS NOT NULL")
     long countCompletedByUserId(UUID userId);

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { RevisionScheduleResponse } from '../api/client';
 import { AlertTriangle, Clock, BarChart2, Target, Play, Pause, Check } from 'lucide-react';
+import Markdown from 'react-markdown';
 
 export default function Revisions() {
     const [selectedRevision, setSelectedRevision] = useState<RevisionScheduleResponse | null>(null);
@@ -158,6 +159,11 @@ export default function Revisions() {
                                         <p className="text-muted mb-lg">No recording available</p>
                                     )}
 
+                                    {/* AI Feedback */}
+                                    {revision.lastRecording?.id && (
+                                        <RevisionAIFeedback recordingId={revision.lastRecording.id} />
+                                    )}
+
                                     <div className="flex gap-md">
                                         <a
                                             href={revision.question.leetcodeUrl}
@@ -192,3 +198,63 @@ export default function Revisions() {
     );
 }
 
+// Component to fetch and display AI feedback for a recording in revision view
+function RevisionAIFeedback({ recordingId }: { recordingId: string }) {
+    const { data: feedback, isLoading } = useQuery({
+        queryKey: ['ai-feedback', recordingId],
+        queryFn: async () => {
+            try {
+                const result = await api.getFeedback(recordingId);
+                // API returns { feedback: [...] } but we need the array
+                return (result as { feedback?: Array<{ type: string; message: string }> }).feedback || [];
+            } catch {
+                return [];
+            }
+        },
+        enabled: !!recordingId,
+        retry: false,
+    });
+
+    if (isLoading) {
+        return <p className="text-muted mb-md">Loading AI feedback...</p>;
+    }
+
+    if (!feedback || feedback.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="mb-lg">
+            <h4 className="mb-md">🤖 AI Feedback</h4>
+            <div className="flex flex-col gap-sm">
+                {feedback.map((fb, i) => (
+                    <div key={i} style={{
+                        background: fb.type === 'HINT'
+                            ? 'rgba(59, 130, 246, 0.1)'
+                            : fb.type === 'REFLECTION_QUESTION'
+                                ? 'rgba(139, 92, 246, 0.1)'
+                                : 'rgba(34, 197, 94, 0.1)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: 'var(--spacing-sm) var(--spacing-md)',
+                    }}>
+                        <div className="flex gap-sm items-center mb-xs">
+                            <span style={{ fontSize: '1rem' }}>
+                                {fb.type === 'HINT' && '💡'}
+                                {fb.type === 'REFLECTION_QUESTION' && '🤔'}
+                                {fb.type === 'COMMUNICATION_TIP' && '💬'}
+                            </span>
+                            <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                                {fb.type === 'HINT' && 'Solution Feedback'}
+                                {fb.type === 'REFLECTION_QUESTION' && 'Reflection Question'}
+                                {fb.type === 'COMMUNICATION_TIP' && 'Communication Tip'}
+                            </span>
+                        </div>
+                        <div className="ai-feedback-content" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6, fontSize: '0.875rem' }}>
+                            <Markdown>{fb.message}</Markdown>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

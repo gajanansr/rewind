@@ -1582,3 +1582,52 @@ textarea.input {
     line-height: 1.4;
   }
 }
+
+/* ===== AI FEEDBACK MARKDOWN STYLES ===== */
+.ai-feedback-content {
+  line-height: 1.7;
+}
+
+.ai-feedback-content p {
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.ai-feedback-content p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-feedback-content strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ai-feedback-content ul,
+.ai-feedback-content ol {
+  margin: var(--spacing-sm) 0;
+  padding-left: var(--spacing-lg);
+}
+
+.ai-feedback-content li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.ai-feedback-content code {
+  background: var(--color-bg-tertiary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.ai-feedback-content h1,
+.ai-feedback-content h2,
+.ai-feedback-content h3 {
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ai-feedback-content h3 {
+  font-size: 0.95rem;
+}

@@ -298,6 +298,7 @@ export interface RevisionScheduleResponse {
     priorityScore: number;
     scheduledAt: string;
     lastRecording?: {
+        id: string;
         version: number;
         audioUrl: string;
         recordedAt: string;

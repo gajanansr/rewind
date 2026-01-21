@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { RefreshCw } from 'lucide-react';
+import Markdown from 'react-markdown';
 
 type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
@@ -632,9 +633,9 @@ export default function Solve() {
                                                 {fb.type === 'COMMUNICATION_TIP' && 'Communication Tip'}
                                             </span>
                                         </div>
-                                        <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                                            {fb.message}
-                                        </p>
+                                        <div className="ai-feedback-content" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
+                                            <Markdown>{fb.message}</Markdown>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -715,9 +716,9 @@ function AIFeedbackSection({ recordingId }: { recordingId: string }) {
                                 {fb.type === 'COMMUNICATION_TIP' && 'Communication Tip'}
                             </span>
                         </div>
-                        <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                            {fb.message}
-                        </p>
+                        <div className="ai-feedback-content" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
+                            <Markdown>{fb.message}</Markdown>
+                        </div>
                     </div>
                 ))}
             </div>

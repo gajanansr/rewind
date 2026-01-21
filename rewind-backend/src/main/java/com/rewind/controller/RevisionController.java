@@ -102,6 +102,7 @@ public class RevisionController {
                 var lastRecording = recordingRepository
                                 .findLatestByUserQuestionId(rs.getUserQuestion().getId())
                                 .map(r -> RecordingInfo.builder()
+                                                .id(r.getId())
                                                 .version(r.getVersion())
                                                 .audioUrl(r.getAudioUrl())
                                                 .recordedAt(r.getRecordedAt())
