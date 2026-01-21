@@ -37,4 +37,16 @@ public class ExplanationRecording {
     @Column(name = "recorded_at")
     @Builder.Default
     private Instant recordedAt = Instant.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "analysis_status")
+    @Builder.Default
+    private AnalysisStatus analysisStatus = AnalysisStatus.PENDING;
+
+    public enum AnalysisStatus {
+        PENDING,
+        PROCESSING,
+        COMPLETED,
+        FAILED
+    }
 }

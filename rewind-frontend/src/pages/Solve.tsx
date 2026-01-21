@@ -21,7 +21,7 @@ export default function Solve() {
     const [confidenceScore, setConfidenceScore] = useState<number>(3);
     const [userQuestionId, setUserQuestionId] = useState<string | null>(null);
     const [_recordingId, setRecordingId] = useState<string | null>(null);
-    const [aiFeedback, setAiFeedback] = useState<Array<{ type: string; message: string }>>([]);
+    // Removed local aiFeedback state in favor of query data
     const [error, setError] = useState<string | null>(null);
 
     const recorder = useAudioRecorder();
@@ -132,21 +132,35 @@ export default function Solve() {
     });
 
     // Analyze recording for AI feedback
+    // Poll for AI Feedback
+    const { data: feedbackData } = useQuery({
+        queryKey: ['feedback', _recordingId],
+        queryFn: () => api.getFeedback(_recordingId!),
+        enabled: !!_recordingId,
+        refetchInterval: (query) => {
+            const data = query.state.data;
+            if (data?.analysisStatus === 'PENDING' || data?.analysisStatus === 'PROCESSING') {
+                return 2000;
+            }
+            return false;
+        }
+    });
+
+    const aiFeedback = feedbackData?.feedback || [];
+    const analysisStatus = feedbackData?.analysisStatus || 'PENDING';
+
+    // Analyze recording trigger
     const analyzeMutation = useMutation({
-        mutationFn: (recId: string) => api.request<{ feedback: Array<{ type: string; message: string }> }>(
+        mutationFn: (recId: string) => api.request<void>(
             `/recordings/${recId}/analyze`,
             { method: 'POST' }
         ),
-        onSuccess: (data) => {
-            console.log('AI Feedback received:', data);
-            setAiFeedback(data.feedback || []);
+        onSuccess: () => {
+            console.log('Analysis triggered successfully');
+            queryClient.invalidateQueries({ queryKey: ['feedback', _recordingId] });
         },
         onError: (err) => {
-            console.error('AI analysis failed:', err);
-            setAiFeedback([{
-                type: 'HINT',
-                message: 'AI analysis is currently unavailable. The API key may not be configured on the server.'
-            }]);
+            console.error('AI analysis trigger failed:', err);
         },
     });
 
@@ -174,7 +188,7 @@ export default function Solve() {
         setCode('');
         setLanguage('python');
         setLeetcodeLink('');
-        setAiFeedback([]);
+        // AI feedback cleared automatically since _recordingId changes/clears
         handleStartSolving();
     };
 
@@ -568,17 +582,28 @@ export default function Solve() {
                     </p>
 
                     {/* AI Feedback Section */}
-                    {analyzeMutation.isPending && (
+                    {/* Show "Analyzing..." if status is PENDING or PROCESSING, or if mutation is pending (initial trigger) */}
+                    {(analysisStatus === 'PENDING' || analysisStatus === 'PROCESSING' || analyzeMutation.isPending) && (
                         <div className="text-muted mb-lg">
-                            <span><Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />Analyzing your solution...</span>
+                            <span><Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                                {analysisStatus === 'PROCESSING' ? 'AI is analyzing your solution...' : 'Queued for analysis...'}
+                            </span>
                         </div>
                     )}
 
-                    {!analyzeMutation.isPending && aiFeedback.length === 0 && (
+                    {analysisStatus === 'FAILED' && (
+                        <div className="card mb-lg" style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
+                            <p className="text-muted" style={{ margin: 0, color: 'var(--color-error)' }}>
+                                <Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />
+                                AI analysis failed. Please try again later.
+                            </p>
+                        </div>
+                    )}
+
+                    {analysisStatus === 'COMPLETED' && aiFeedback.length === 0 && (
                         <div className="card mb-lg text-center" style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
                             <p className="text-muted" style={{ margin: 0 }}>
                                 <Bot size={18} style={{ display: 'inline', marginRight: '6px' }} />AI feedback will appear here after analysis.
-                                Check back later or re-solve for personalized tips!
                             </p>
                         </div>
                     )}

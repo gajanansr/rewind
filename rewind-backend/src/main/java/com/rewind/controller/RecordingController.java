@@ -82,59 +82,22 @@ public class RecordingController {
          */
         @PostMapping("/{recordingId}/analyze")
         @Transactional
-        public ResponseEntity<Map<String, Object>> analyzeRecording(
+        public ResponseEntity<Void> analyzeRecording(
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
 
                 var recording = recordingRepository.findById(recordingId)
                                 .orElseThrow(() -> new RuntimeException("Recording not found"));
 
-                UserQuestion userQuestion = recording.getUserQuestion();
-
-                // Get the latest solution code if available
-                var latestSolution = solutionRepository.findLatestByUserQuestionId(userQuestion.getId());
-                String code = latestSolution.map(Solution::getCode).orElse("");
-                String language = latestSolution.map(Solution::getLanguage).orElse("python");
-
-                // Generate AI feedback for solution
-                List<AIFeedback> feedbackList = geminiService.analyzeSolution(userQuestion, recording, code, language);
-
-                // Transcribe audio if not already transcribed
-                log.info("Recording {} audioUrl: {}", recordingId, recording.getAudioUrl());
-                if ((recording.getTranscript() == null || recording.getTranscript().isEmpty())
-                                && recording.getAudioUrl() != null && !recording.getAudioUrl().isEmpty()) {
-                        log.info("Attempting transcription for recording {}", recordingId);
-                        transcriptService.transcribeRecording(recordingId);
-                        // Reload recording to get the transcript
-                        recording = recordingRepository.findById(recordingId).orElse(recording);
-                        log.info("After transcription, transcript length: {}",
-                                        recording.getTranscript() != null ? recording.getTranscript().length() : 0);
+                // Basic security check
+                if (!recording.getUserQuestion().getUser().getId().equals(user.getId())) {
+                        return ResponseEntity.status(403).build();
                 }
 
-                // If we have a transcript, also analyze communication
-                String transcript = recording.getTranscript();
-                log.info("Transcript for recording {}: length={}", recordingId,
-                                transcript != null ? transcript.length() : 0);
+                // Trigger async analysis
+                geminiService.processRecording(recordingId);
 
-                if (transcript != null && transcript.length() > 20) { // Only analyze if meaningful transcript
-                        log.info("Analyzing transcript: {}",
-                                        transcript.substring(0, Math.min(100, transcript.length())));
-                        AIFeedback commTip = geminiService.analyzeTranscript(userQuestion, recording, transcript);
-                        if (commTip != null) {
-                                feedbackList.add(commTip);
-                        }
-                } else {
-                        log.info("Skipping communication analysis - transcript too short or missing");
-                }
-
-                return ResponseEntity.ok(Map.of(
-                                "recordingId", recordingId,
-                                "feedback", feedbackList.stream()
-                                                .map(f -> Map.of(
-                                                                "type", f.getFeedbackType().name(),
-                                                                "message", f.getMessage()))
-                                                .collect(Collectors.toList()),
-                                "status", "ANALYZED"));
+                return ResponseEntity.accepted().build();
         }
 
         /**
@@ -146,13 +109,21 @@ public class RecordingController {
                         @AuthenticationPrincipal User user,
                         @PathVariable UUID recordingId) {
 
-                recordingRepository.findById(recordingId)
+                var recording = recordingRepository.findById(recordingId)
                                 .orElseThrow(() -> new RuntimeException("Recording not found"));
+
+                // Basic security check
+                if (!recording.getUserQuestion().getUser().getId().equals(user.getId())) {
+                        return ResponseEntity.status(403).build();
+                }
 
                 // Get feedback specific to this recording (or empty for legacy recordings)
                 List<AIFeedback> feedbackList = geminiService.getFeedbackByRecording(recordingId);
 
                 return ResponseEntity.ok(Map.of(
+                                "analysisStatus",
+                                recording.getAnalysisStatus() != null ? recording.getAnalysisStatus().name()
+                                                : "COMPLETED",
                                 "feedback", feedbackList.stream()
                                                 .map(f -> Map.<String, Object>of(
                                                                 "id", f.getId(),

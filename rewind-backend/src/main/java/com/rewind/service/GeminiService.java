@@ -3,6 +3,8 @@ package com.rewind.service;
 import com.rewind.model.AIFeedback;
 import com.rewind.model.UserQuestion;
 import com.rewind.repository.AIFeedbackRepository;
+import com.rewind.repository.ExplanationRecordingRepository;
+import com.rewind.service.TranscriptService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -19,6 +21,9 @@ import java.util.UUID;
 public class GeminiService {
 
     private final AIFeedbackRepository feedbackRepository;
+    private final ExplanationRecordingRepository recordingRepository;
+    private final com.rewind.repository.SolutionRepository solutionRepository;
+    private final TranscriptService transcriptService;
     private final RestTemplate restTemplate;
 
     @Value("${gemini.api-key:}")
@@ -26,9 +31,68 @@ public class GeminiService {
 
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
-    public GeminiService(AIFeedbackRepository feedbackRepository) {
+    public GeminiService(AIFeedbackRepository feedbackRepository,
+            ExplanationRecordingRepository recordingRepository,
+            com.rewind.repository.SolutionRepository solutionRepository,
+            TranscriptService transcriptService) {
         this.feedbackRepository = feedbackRepository;
+        this.recordingRepository = recordingRepository;
+        this.solutionRepository = solutionRepository;
+        this.transcriptService = transcriptService;
         this.restTemplate = new RestTemplate();
+    }
+
+    /**
+     * Process recording analysis asynchronously (Solution Feedback + Transcription
+     * + Communication Tips).
+     */
+    @org.springframework.scheduling.annotation.Async
+    public void processRecording(UUID recordingId) {
+        log.info("Starting async analysis for recording: {}", recordingId);
+
+        var recordingOptional = recordingRepository.findById(recordingId);
+        if (recordingOptional.isEmpty()) {
+            log.error("Recording not found for async analysis: {}", recordingId);
+            return;
+        }
+
+        var recording = recordingOptional.get();
+        recording.setAnalysisStatus(com.rewind.model.ExplanationRecording.AnalysisStatus.PROCESSING);
+        recordingRepository.save(recording);
+
+        try {
+            UserQuestion userQuestion = recording.getUserQuestion();
+
+            // 1. Analyze Solution Code
+            var latestSolution = solutionRepository.findLatestByUserQuestionId(userQuestion.getId());
+            String code = latestSolution.map(com.rewind.model.Solution::getCode).orElse("");
+            String language = latestSolution.map(com.rewind.model.Solution::getLanguage).orElse("python");
+
+            analyzeSolution(userQuestion, recording, code, language);
+
+            // 2. Transcribe Audio (if needed)
+            if ((recording.getTranscript() == null || recording.getTranscript().isEmpty())
+                    && recording.getAudioUrl() != null && !recording.getAudioUrl().isEmpty()) {
+                log.info("Transcribing recording during async analysis: {}", recordingId);
+                recording = transcriptService.transcribeRecording(recordingId);
+            }
+
+            // 3. Analyze Transcript (if available)
+            String transcript = recording.getTranscript();
+            if (transcript != null && transcript.length() > 20) {
+                analyzeTranscript(userQuestion, recording, transcript);
+            }
+
+            // Mark as COMPLETED
+            recording.setAnalysisStatus(com.rewind.model.ExplanationRecording.AnalysisStatus.COMPLETED);
+            recordingRepository.save(recording);
+            log.info("Async analysis completed for recording: {}", recordingId);
+
+        } catch (Exception e) {
+            log.error("Async analysis failed for recording: {}", recordingId, e);
+            recording.setAnalysisStatus(com.rewind.model.ExplanationRecording.AnalysisStatus.FAILED);
+            recordingRepository.save(recording);
+        }
     }
 
     /**
@@ -44,37 +108,25 @@ public class GeminiService {
         List<AIFeedback> feedbackList = new ArrayList<>();
 
         // Generate hint/improvement suggestions
-        String solutionPrompt = buildSolutionPrompt(
-                userQuestion.getQuestion().getTitle(),
-                userQuestion.getQuestion().getPattern().getName(),
-                userQuestion.getQuestion().getDifficulty(),
-                code,
+        String solutionPrompt = buildSolutionPrompt(userQuestion.getQuestion().getTitle(),
+                userQuestion.getQuestion().getPattern().getName(), userQuestion.getQuestion().getDifficulty(), code,
                 language);
 
         String solutionFeedback = callGemini(solutionPrompt);
         if (solutionFeedback != null) {
-            AIFeedback hint = AIFeedback.builder()
-                    .userQuestion(userQuestion)
-                    .recording(recording)
-                    .feedbackType(AIFeedback.FeedbackType.HINT)
-                    .message(solutionFeedback)
-                    .build();
+            AIFeedback hint = AIFeedback.builder().userQuestion(userQuestion).recording(recording)
+                    .feedbackType(AIFeedback.FeedbackType.HINT).message(solutionFeedback).build();
             feedbackList.add(feedbackRepository.save(hint));
         }
 
         // Generate reflection question
-        String reflectionPrompt = buildReflectionPrompt(
-                userQuestion.getQuestion().getTitle(),
+        String reflectionPrompt = buildReflectionPrompt(userQuestion.getQuestion().getTitle(),
                 userQuestion.getQuestion().getPattern().getName());
 
         String reflectionFeedback = callGemini(reflectionPrompt);
         if (reflectionFeedback != null) {
-            AIFeedback reflection = AIFeedback.builder()
-                    .userQuestion(userQuestion)
-                    .recording(recording)
-                    .feedbackType(AIFeedback.FeedbackType.REFLECTION_QUESTION)
-                    .message(reflectionFeedback)
-                    .build();
+            AIFeedback reflection = AIFeedback.builder().userQuestion(userQuestion).recording(recording)
+                    .feedbackType(AIFeedback.FeedbackType.REFLECTION_QUESTION).message(reflectionFeedback).build();
             feedbackList.add(feedbackRepository.save(reflection));
         }
 
@@ -91,18 +143,12 @@ public class GeminiService {
             return null;
         }
 
-        String prompt = buildCommunicationPrompt(
-                userQuestion.getQuestion().getTitle(),
-                transcript);
+        String prompt = buildCommunicationPrompt(userQuestion.getQuestion().getTitle(), transcript);
 
         String feedback = callGemini(prompt);
         if (feedback != null) {
-            AIFeedback tip = AIFeedback.builder()
-                    .userQuestion(userQuestion)
-                    .recording(recording)
-                    .feedbackType(AIFeedback.FeedbackType.COMMUNICATION_TIP)
-                    .message(feedback)
-                    .build();
+            AIFeedback tip = AIFeedback.builder().userQuestion(userQuestion).recording(recording)
+                    .feedbackType(AIFeedback.FeedbackType.COMMUNICATION_TIP).message(feedback).build();
             return feedbackRepository.save(tip);
         }
         return null;
@@ -184,8 +230,7 @@ public class GeminiService {
     private String callGemini(String prompt) {
         try {
             // Log API key status (not the key itself)
-            log.info("Calling Gemini API, key configured: {}, key length: {}",
-                    apiKey != null && !apiKey.isEmpty(),
+            log.info("Calling Gemini API, key configured: {}, key length: {}", apiKey != null && !apiKey.isEmpty(),
                     apiKey != null ? apiKey.length() : 0);
 
             String url = GEMINI_API_URL + "?key=" + apiKey;
@@ -193,12 +238,9 @@ public class GeminiService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            Map<String, Object> requestBody = Map.of(
-                    "contents", List.of(Map.of(
-                            "parts", List.of(Map.of("text", prompt)))),
-                    "generationConfig", Map.of(
-                            "temperature", 0.7,
-                            "maxOutputTokens", 4000));
+            Map<String, Object> requestBody = Map.of("contents",
+                    List.of(Map.of("parts", List.of(Map.of("text", prompt)))), "generationConfig",
+                    Map.of("temperature", 0.7, "maxOutputTokens", 4000));
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
