@@ -1672,7 +1672,9 @@ textarea.input {
 .audio-player-progress {
   flex: 1;
   position: relative;
-  height: 6px;
+  height: 36px;
+  display: flex;
+  align-items: center;
 }
 
 .audio-player-slider {
