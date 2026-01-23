@@ -18,9 +18,28 @@ export default function AudioPlayer({ src, onEnded, className = '' }: AudioPlaye
         const audio = audioRef.current;
         if (!audio) return;
 
-        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleTimeUpdate = () => {
+            setCurrentTime(audio.currentTime);
+            // Also check duration here for streaming audio where metadata may load late
+            if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+                setDuration(audio.duration);
+            }
+        };
         const handleLoadedMetadata = () => {
-            setDuration(audio.duration);
+            if (audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
+            setIsLoaded(true);
+        };
+        const handleDurationChange = () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
+        };
+        const handleCanPlay = () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
             setIsLoaded(true);
         };
         const handleEnded = () => {
@@ -31,14 +50,24 @@ export default function AudioPlayer({ src, onEnded, className = '' }: AudioPlaye
 
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('durationchange', handleDurationChange);
+        audio.addEventListener('canplay', handleCanPlay);
         audio.addEventListener('ended', handleEnded);
+
+        // Try to get duration immediately if already loaded
+        if (audio.duration && isFinite(audio.duration)) {
+            setDuration(audio.duration);
+            setIsLoaded(true);
+        }
 
         return () => {
             audio.removeEventListener('timeupdate', handleTimeUpdate);
             audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('durationchange', handleDurationChange);
+            audio.removeEventListener('canplay', handleCanPlay);
             audio.removeEventListener('ended', handleEnded);
         };
-    }, [onEnded]);
+    }, [onEnded, src]);
 
     // Reset state when src changes
     useEffect(() => {
