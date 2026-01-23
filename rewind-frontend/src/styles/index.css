@@ -1638,8 +1638,8 @@ textarea.input {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  background: rgba(var(--color-primary-rgb, 59, 130, 246), 0.08);
-  border: 1px solid rgba(var(--color-primary-rgb, 59, 130, 246), 0.2);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   width: 100%;
 }
@@ -1651,7 +1651,7 @@ textarea.input {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--color-accent);
   color: white;
   border: none;
   cursor: pointer;
@@ -1661,7 +1661,7 @@ textarea.input {
 
 .audio-player-btn:hover:not(:disabled) {
   transform: scale(1.05);
-  background: var(--color-primary-dark, #2563eb);
+  background: var(--color-accent-hover);
 }
 
 .audio-player-btn:disabled {
@@ -1682,10 +1682,10 @@ textarea.input {
   height: 6px;
   border-radius: 3px;
   background: linear-gradient(to right,
-      var(--color-primary) 0%,
-      var(--color-primary) var(--progress, 0%),
-      rgba(var(--color-primary-rgb, 59, 130, 246), 0.2) var(--progress, 0%),
-      rgba(var(--color-primary-rgb, 59, 130, 246), 0.2) 100%);
+      var(--color-accent) 0%,
+      var(--color-accent) var(--progress, 0%),
+      var(--color-bg-secondary) var(--progress, 0%),
+      var(--color-bg-secondary) 100%);
   cursor: pointer;
   outline: none;
 }
@@ -1696,9 +1696,9 @@ textarea.input {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--color-primary);
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -1711,9 +1711,9 @@ textarea.input {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--color-primary);
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
 
@@ -1728,17 +1728,42 @@ textarea.input {
   gap: 2px;
   font-size: 0.75rem;
   font-family: var(--font-mono);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   min-width: 70px;
   justify-content: center;
 }
 
 .audio-player-separator {
   opacity: 0.5;
+  color: var(--color-text-muted);
 }
 
 .audio-player-volume-icon {
   color: var(--color-text-secondary);
-  opacity: 0.6;
+  opacity: 0.7;
   flex-shrink: 0;
+}
+
+/* Light mode specific overrides for audio player */
+[data-theme="light"] .audio-player {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+[data-theme="light"] .audio-player-slider {
+  background: linear-gradient(to right,
+      var(--color-accent) 0%,
+      var(--color-accent) var(--progress, 0%),
+      var(--color-bg-tertiary) var(--progress, 0%),
+      var(--color-bg-tertiary) 100%);
+}
+
+[data-theme="light"] .audio-player-slider::-webkit-slider-thumb {
+  border-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .audio-player-slider::-moz-range-thumb {
+  border-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
