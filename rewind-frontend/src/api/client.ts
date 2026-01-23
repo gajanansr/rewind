@@ -28,8 +28,9 @@ class ApiClient {
         });
 
         if (!response.ok) {
-            // Auto-logout on 401 (Unauthorized) or 403 (Forbidden) - token expired or invalid
-            if (response.status === 401 || response.status === 403) {
+            // Auto-logout ONLY on 401 (Unauthorized) - token expired or invalid
+            // 403 (Forbidden) means valid token but no permission for this resource - don't logout
+            if (response.status === 401) {
                 console.warn('Token expired or invalid, logging out...');
                 // Clear all auth-related storage (Zustand uses 'rewind-auth')
                 localStorage.removeItem('rewind-auth');
@@ -37,6 +38,11 @@ class ApiClient {
                 // Redirect to login with full page reload to reset React state
                 window.location.href = '/login';
                 throw new Error('Session expired. Please log in again.');
+            }
+
+            // Handle 403 separately - permission denied but don't logout
+            if (response.status === 403) {
+                throw new Error('You do not have permission to access this resource.');
             }
 
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
