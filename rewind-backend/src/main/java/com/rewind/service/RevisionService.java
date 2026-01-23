@@ -114,8 +114,8 @@ public class RevisionService {
             return existingSchedule.get();
         }
 
-        // Schedule first revision 1 day after completion (next day)
-        Instant scheduledAt = Instant.now().plus(1, ChronoUnit.DAYS);
+        // Schedule first revision immediately (same day as completion)
+        Instant scheduledAt = Instant.now();
 
         RevisionSchedule.Reason reason = userQuestion.getConfidenceScore() != null
                 && userQuestion.getConfidenceScore() <= 2
