@@ -146,8 +146,14 @@ public class PaymentService {
      */
     @Transactional
     public void handleWebhook(String payload, String signature) throws RazorpayException {
+        // Use webhook secret if configured, otherwise fallback to key secret
+        String secret = razorpayConfig.getWebhookSecret();
+        if (secret == null || secret.isEmpty()) {
+            secret = razorpayConfig.getKeySecret();
+        }
+
         // Verify webhook signature
-        boolean isValid = Utils.verifyWebhookSignature(payload, signature, razorpayConfig.getKeySecret());
+        boolean isValid = Utils.verifyWebhookSignature(payload, signature, secret);
         if (!isValid) {
             throw new SecurityException("Invalid webhook signature");
         }
