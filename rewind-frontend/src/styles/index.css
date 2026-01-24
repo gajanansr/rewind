@@ -1778,7 +1778,7 @@ textarea.input {
   font-size: 0.875rem;
   font-weight: 500;
   max-width: 600px;
-  margin: 0 auto var(--spacing-lg);
+  margin: var(--spacing-lg) auto var(--spacing-lg);
   border-radius: var(--radius-lg);
 }
 
