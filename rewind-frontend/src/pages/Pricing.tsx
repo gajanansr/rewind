@@ -138,7 +138,8 @@ export default function Pricing() {
             price: '₹0',
             period: 'Forever',
             features: [
-                { name: '169 Questions', included: true },
+                { name: 'Tenure: Lifetime', included: true },
+                { name: 'Questions: All 169', included: true },
                 { name: 'Dashboard Tracking', included: true },
                 { name: 'Submit Solutions', included: true },
                 { name: 'Voice Recording', included: false },
@@ -153,7 +154,8 @@ export default function Pricing() {
             price: '₹149',
             period: '30 Days',
             features: [
-                { name: '169 Questions', included: true },
+                { name: 'Tenure: 30 Days', included: true },
+                { name: 'Questions: All 169', included: true },
                 { name: 'Dashboard Tracking', included: true },
                 { name: 'Submit Solutions', included: true },
                 { name: 'Voice Recording', included: true },
@@ -170,7 +172,8 @@ export default function Pricing() {
             savings: 'Save ₹148',
             popular: true,
             features: [
-                { name: '169 Questions', included: true },
+                { name: 'Tenure: 90 Days', included: true },
+                { name: 'Questions: All 169', included: true },
                 { name: 'Dashboard Tracking', included: true },
                 { name: 'Submit Solutions', included: true },
                 { name: 'Voice Recording', included: true },
@@ -185,7 +188,7 @@ export default function Pricing() {
         <div className="page">
             <div className="pricing-container">
                 <div className="pricing-header">
-                    <h1>Choose Your Plan</h1>
+                    <h1>Plans & Pricing</h1>
                     <p>Unlock the full power of AI-driven learning.</p>
                 </div>
 
