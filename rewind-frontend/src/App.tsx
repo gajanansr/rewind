@@ -17,7 +17,6 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import Contact from './pages/Contact';
-import TrialBanner from './components/TrialBanner';
 import './styles/index.css';
 import './styles/landing.css';
 
@@ -199,7 +198,6 @@ function App() {
       <BrowserRouter>
         <div className="app-container">
           <Navigation />
-          <TrialBanner />
 
           <Routes>
             <Route path="/login" element={<Login />} />

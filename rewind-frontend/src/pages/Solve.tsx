@@ -7,6 +7,7 @@ import { RefreshCw, Mic, FileCode, Bot, Lightbulb, HelpCircle, MessageCircle, Pa
 import Markdown from 'react-markdown';
 import AudioPlayer from '../components/AudioPlayer';
 import { usePremiumAccess } from '../components/PremiumGate';
+import TrialBanner from '../components/TrialBanner';
 
 type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
@@ -230,6 +231,8 @@ export default function Solve() {
                     <p style={{ color: 'var(--color-error)', margin: 0 }}>{error}</p>
                 </div>
             )}
+
+            <TrialBanner />
 
             {/* Question Header */}
             <div className="card mb-lg">

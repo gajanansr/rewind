@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { TrendingUp, TrendingDown, ArrowRight, Flame } from 'lucide-react';
 import ActivityHeatmap from '../components/ActivityHeatmap';
+import TrialBanner from '../components/TrialBanner';
 
 // Question distribution in the 169-question set
 const TOTAL_QUESTIONS = 169;
@@ -95,6 +96,7 @@ export default function Dashboard() {
 
     return (
         <div className="page">
+            <TrialBanner />
             <div className="grid grid-2" style={{ alignItems: 'start' }}>
                 {/* Readiness Meter */}
                 <div className="card readiness-meter">
