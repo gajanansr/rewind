@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { PaymentPlan } from '../api/client';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
-import { Check, Sparkles, Loader2, Crown, AlertCircle } from 'lucide-react';
+import { Check, X, Crown, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 
 declare global {
     interface Window {
@@ -42,15 +41,8 @@ interface RazorpayResponse {
 }
 
 export default function Pricing() {
-    const [selectedPlan, setSelectedPlan] = useState<'MONTHLY' | 'QUARTERLY'>('QUARTERLY');
     const [paymentError, setPaymentError] = useState<string | null>(null);
-    const { isActive, plan: currentPlan, daysRemaining, fetchSubscription } = useSubscriptionStore();
-
-    // Fetch plans
-    const { data: plansData, isLoading: plansLoading } = useQuery({
-        queryKey: ['payment-plans'],
-        queryFn: () => api.getPaymentPlans(),
-    });
+    const { isActive, plan: currentPlan, fetchSubscription } = useSubscriptionStore();
 
     // Create order mutation
     const createOrderMutation = useMutation({
@@ -101,7 +93,7 @@ export default function Pricing() {
                 email: orderData.email,
             },
             theme: {
-                color: '#6366f1',
+                color: '#8b5cf6',
             },
             modal: {
                 ondismiss: () => {
@@ -114,12 +106,11 @@ export default function Pricing() {
         razorpay.open();
     };
 
-    const handleSubscribe = () => {
+    const handleSubscribe = (planId: 'MONTHLY' | 'QUARTERLY') => {
         setPaymentError(null);
-        createOrderMutation.mutate(selectedPlan);
+        createOrderMutation.mutate(planId);
     };
 
-    const plans = plansData?.plans || [];
     const isProcessing = createOrderMutation.isPending || verifyPaymentMutation.isPending;
 
     // Show success state
@@ -140,108 +131,124 @@ export default function Pricing() {
         );
     }
 
+    const plans = [
+        {
+            id: 'FREE',
+            name: 'Free',
+            price: '₹0',
+            period: 'Forever',
+            features: [
+                { name: '169 Questions', included: true },
+                { name: 'Dashboard Tracking', included: true },
+                { name: 'Submit Solutions', included: true },
+                { name: 'Voice Recording', included: false },
+                { name: 'AI Feedback', included: false },
+                { name: 'Learn Patterns', included: false },
+                { name: 'Advanced Analytics', included: false },
+            ]
+        },
+        {
+            id: 'MONTHLY',
+            name: 'Monthly',
+            price: '₹149',
+            period: '30 Days',
+            features: [
+                { name: '169 Questions', included: true },
+                { name: 'Dashboard Tracking', included: true },
+                { name: 'Submit Solutions', included: true },
+                { name: 'Voice Recording', included: true },
+                { name: 'AI Feedback', included: true },
+                { name: 'Learn Patterns', included: true },
+                { name: 'Advanced Analytics', included: true },
+            ]
+        },
+        {
+            id: 'QUARTERLY',
+            name: 'Quarterly',
+            price: '₹299',
+            period: '90 Days',
+            savings: 'Save ₹148',
+            popular: true,
+            features: [
+                { name: '169 Questions', included: true },
+                { name: 'Dashboard Tracking', included: true },
+                { name: 'Submit Solutions', included: true },
+                { name: 'Voice Recording', included: true },
+                { name: 'AI Feedback', included: true },
+                { name: 'Learn Patterns', included: true },
+                { name: 'Advanced Analytics', included: true },
+            ]
+        }
+    ];
+
     return (
         <div className="page">
             <div className="pricing-container">
                 <div className="pricing-header">
-                    <h1>Simple, Transparent Pricing</h1>
-                    <p>Choose the plan that works for you. Cancel anytime.</p>
+                    <h1>Choose Your Plan</h1>
+                    <p>Unlock the full power of AI-driven learning.</p>
                 </div>
 
-                {/* Current subscription status */}
-                {isActive && (currentPlan === 'TRIAL' || currentPlan === 'MONTHLY' || currentPlan === 'QUARTERLY') && (
-                    <div className="pricing-current">
-                        <Crown size={18} />
-                        <span>
-                            {currentPlan === 'TRIAL'
-                                ? `Trial: ${daysRemaining} days remaining`
-                                : `${currentPlan} plan: ${daysRemaining} days remaining`}
-                        </span>
-                    </div>
-                )}
-
-                {plansLoading ? (
-                    <div className="pricing-loading">
-                        <Loader2 className="animate-spin" size={32} />
-                    </div>
-                ) : (
-                    <div className="pricing-plans">
-                        {plans.map((plan: PaymentPlan) => {
-                            const isSelected = selectedPlan === plan.id;
-                            const isCurrentPlan = currentPlan === plan.id;
-
-                            return (
-                                <div
-                                    key={plan.id}
-                                    className={`pricing-card ${isSelected ? 'selected' : ''} ${plan.popular ? 'popular' : ''}`}
-                                    onClick={() => !isCurrentPlan && setSelectedPlan(plan.id as 'MONTHLY' | 'QUARTERLY')}
-                                >
-                                    {plan.popular && (
-                                        <div className="pricing-badge">
-                                            <Sparkles size={14} />
-                                            Most Popular
-                                        </div>
-                                    )}
-
-                                    <h3>{plan.name}</h3>
-                                    <div className="pricing-price">
-                                        <span className="pricing-currency">₹</span>
-                                        <span className="pricing-amount">{plan.price}</span>
-                                        <span className="pricing-period">/{plan.duration}</span>
-                                    </div>
-
-                                    {plan.savings && (
-                                        <div className="pricing-savings">{plan.savings}</div>
-                                    )}
-
-                                    <p className="pricing-description">{plan.description}</p>
-
-                                    <ul className="pricing-features">
-                                        <li><Check size={16} /> Unlimited questions</li>
-                                        <li><Check size={16} /> AI-powered feedback</li>
-                                        <li><Check size={16} /> Spaced repetition</li>
-                                        <li><Check size={16} /> Progress tracking</li>
-                                        <li><Check size={16} /> Voice explanations</li>
-                                    </ul>
-
-                                    {isCurrentPlan ? (
-                                        <div className="pricing-current-badge">Current Plan</div>
-                                    ) : (
-                                        <div className={`pricing-radio ${isSelected ? 'checked' : ''}`} />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
                 {paymentError && (
-                    <div className="pricing-error">
+                    <div className="pricing-error mb-lg">
                         <AlertCircle size={18} />
                         {paymentError}
                     </div>
                 )}
 
-                <button
-                    className="btn btn-primary pricing-cta"
-                    onClick={handleSubscribe}
-                    disabled={isProcessing || (currentPlan !== 'TRIAL' && currentPlan !== 'NONE')}
-                >
-                    {isProcessing ? (
-                        <>
-                            <Loader2 className="animate-spin" size={18} />
-                            Processing...
-                        </>
-                    ) : (
-                        <>
-                            <Crown size={18} />
-                            Subscribe to {selectedPlan === 'MONTHLY' ? 'Monthly' : 'Quarterly'}
-                        </>
-                    )}
-                </button>
+                <div className="pricing-grid">
+                    {plans.map((plan) => (
+                        <div key={plan.id} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
+                            {plan.popular && (
+                                <div className="pricing-badge">
+                                    <Sparkles size={14} />
+                                    Best Value
+                                </div>
+                            )}
 
-                <p className="pricing-note">
-                    Secure payment powered by Razorpay. Cancel anytime from your profile.
+                            <div className="pricing-card-header">
+                                <h3>{plan.name}</h3>
+                                <div className="pricing-price-box">
+                                    <span className="price">{plan.price}</span>
+                                    <span className="period">/ {plan.period}</span>
+                                </div>
+                                {plan.savings && <span className="savings-tag">{plan.savings}</span>}
+                            </div>
+
+                            <div className="pricing-features-list">
+                                {plan.features.map((feature, idx) => (
+                                    <div key={idx} className={`feature-item ${feature.included ? '' : 'disabled'}`}>
+                                        {feature.included ? <Check size={18} className="icon-check" /> : <X size={18} className="icon-x" />}
+                                        <span>{feature.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="pricing-action">
+                                {plan.id === 'FREE' ? (
+                                    <button className="btn btn-secondary btn-full" disabled>
+                                        {(currentPlan === 'NONE' || !isActive) ? 'Current Plan' : 'Free Forever'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        className={`btn btn-full ${plan.popular ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => handleSubscribe(plan.id as 'MONTHLY' | 'QUARTERLY')}
+                                        disabled={isProcessing || (isActive && currentPlan === plan.id)}
+                                    >
+                                        {isProcessing ? (
+                                            <Loader2 className="animate-spin" size={18} />
+                                        ) : (
+                                            isActive && currentPlan === plan.id ? 'Current Plan' : 'Upgrade'
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <p className="pricing-note text-center mt-xl text-muted">
+                    Secure payment powered by Razorpay. 14-day money-back guarantee.
                 </p>
             </div>
         </div>
