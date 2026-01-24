@@ -15,8 +15,8 @@ export default function Contact() {
                         </div>
                         <h3>Email Support</h3>
                         <p>For general inquiries and support</p>
-                        <a href="mailto:support@rewind.app" className="contact-link">
-                            support@rewind.app
+                        <a href="mailto:gajanan1055@gmail.com" className="contact-link">
+                            gajanan1055@gmail.com
                         </a>
                     </div>
 
@@ -26,8 +26,8 @@ export default function Contact() {
                         </div>
                         <h3>Feedback</h3>
                         <p>Help us improve Rewind</p>
-                        <a href="mailto:feedback@rewind.app" className="contact-link">
-                            feedback@rewind.app
+                        <a href="mailto:gajanan1055@gmail.com" className="contact-link">
+                            gajanan1055@gmail.com
                         </a>
                     </div>
 
@@ -80,7 +80,7 @@ export default function Contact() {
                     <div className="faq-item">
                         <h4>How do I delete my account?</h4>
                         <p>
-                            Email us at support@rewind.app with your account deletion request.
+                            Email us at gajanan1055@gmail.com with your account deletion request.
                             We'll process it within 7 days.
                         </p>
                     </div>
@@ -100,7 +100,7 @@ export default function Contact() {
                         For partnerships, collaborations, or business-related inquiries:
                     </p>
                     <p>
-                        <a href="mailto:business@rewind.app">business@rewind.app</a>
+                        <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a>
                     </p>
                 </section>
 
@@ -110,7 +110,7 @@ export default function Contact() {
                         Found a bug or security vulnerability? Please report it responsibly:
                     </p>
                     <p>
-                        <a href="mailto:security@rewind.app">security@rewind.app</a>
+                        <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a>
                     </p>
                 </section>
 

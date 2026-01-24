@@ -140,7 +140,7 @@ export default function TermsOfService() {
                     <h2>13. Contact</h2>
                     <p>
                         For questions about these Terms, contact us at{' '}
-                        <a href="mailto:support@rewind.app">support@rewind.app</a>
+                        <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a>
                     </p>
                 </section>
 

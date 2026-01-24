@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
-import { TrendingUp, TrendingDown, ArrowRight, Flame } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, Flame, Crown } from 'lucide-react';
+import { useSubscriptionStore } from '../stores/subscriptionStore';
 import ActivityHeatmap from '../components/ActivityHeatmap';
 import TrialBanner from '../components/TrialBanner';
 
@@ -22,6 +23,7 @@ const TOTAL_POSSIBLE_REDUCTION =
     (HARD_TOTAL * HARD_DAY_REDUCTION);
 
 export default function Dashboard() {
+    const { isActive, isTrial } = useSubscriptionStore();
     const { data: readiness, isLoading: _isLoading } = useQuery({
         queryKey: ['readiness'],
         queryFn: () => api.getReadiness(),
@@ -107,6 +109,26 @@ export default function Dashboard() {
                     <p className="days-remaining">
                         {displayData.daysRemaining} days remaining
                     </p>
+
+                    {isActive && !isTrial && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            marginTop: '8px',
+                            marginBottom: '8px',
+                            padding: '4px 12px',
+                            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%)',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            color: '#FFD700',
+                            fontSize: '0.8rem',
+                            fontWeight: 600
+                        }}>
+                            <Crown size={14} fill="#FFD700" /> Premium Member
+                        </div>
+                    )}
 
                     <div className={`readiness-trend ${displayData.trend.toLowerCase()}`}>
                         {displayData.trend === 'IMPROVING' && <TrendingUp size={18} />}

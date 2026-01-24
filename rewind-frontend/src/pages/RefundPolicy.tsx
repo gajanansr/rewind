@@ -60,7 +60,7 @@ export default function RefundPolicy() {
                     <h2>4. How to Request a Refund</h2>
                     <p>To request a refund:</p>
                     <ol>
-                        <li>Email us at <a href="mailto:support@rewind.app">support@rewind.app</a></li>
+                        <li>Email us at <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a></li>
                         <li>Include your registered email address</li>
                         <li>Provide your reason for requesting a refund</li>
                         <li>Include your payment receipt or transaction ID</li>
@@ -113,7 +113,7 @@ export default function RefundPolicy() {
                         For refund requests or questions about this policy:
                     </p>
                     <p>
-                        <strong>Email:</strong> <a href="mailto:support@rewind.app">support@rewind.app</a><br />
+                        <strong>Email:</strong> <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a><br />
                         <strong>Response Time:</strong> Within 24-48 hours
                     </p>
                 </section>

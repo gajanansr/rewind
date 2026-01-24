@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { api } from '../api/client';
 import { startOfDay, differenceInDays } from 'date-fns';
-import { Coffee, AlertTriangle } from 'lucide-react';
+import { Coffee, AlertTriangle, Crown, Sparkles } from 'lucide-react';
+import { useSubscriptionStore } from '../stores/subscriptionStore';
 
 export default function Profile() {
     const { user, signOut } = useAuthStore();
+    const { isActive, isTrial, plan, expiresAt } = useSubscriptionStore();
     const navigate = useNavigate();
 
     // Reset Modal State
@@ -77,6 +79,57 @@ export default function Profile() {
                     <div className="bg-tertiary rounded-md" style={{ background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
                         <div className="text-muted text-sm mb-xs">Days Active</div>
                         <div className="font-medium">{daysActive} days</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Subscription Section */}
+            <div className="card mb-lg">
+                <div className="flex justify-between items-center mb-md">
+                    <h3 className="font-bold flex items-center gap-sm">
+                        <Crown size={20} className={isActive && !isTrial ? "text-warning" : "text-muted"} style={{ color: isActive && !isTrial ? '#FFD700' : 'inherit' }} />
+                        Subscription
+                    </h3>
+                    {isActive && !isTrial && (
+                        <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            Premium Active
+                        </span>
+                    )}
+                </div>
+
+                <div className="bg-tertiary rounded-md" style={{ background: 'var(--color-bg-tertiary)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-md)' }}>
+                    <div className="flex justify-between items-center flex-wrap gap-md">
+                        <div>
+                            <div className="font-medium mb-xs flex items-center gap-xs">
+                                {isActive && !isTrial
+                                    ? (plan === 'QUARTERLY' ? 'Quarterly Plan' : 'Monthly Plan')
+                                    : (isTrial ? 'Free Trial' : 'Free Plan')}
+                            </div>
+                            <div className="text-sm text-muted">
+                                {isActive && !isTrial && expiresAt
+                                    ? `Next billing date: ${new Date(expiresAt).toLocaleDateString()}`
+                                    : 'Upgrade to unlock unlimited features'}
+                            </div>
+                        </div>
+                        {!isActive || isTrial ? (
+                            <button
+                                onClick={() => navigate('/pricing')}
+                                className="btn"
+                                style={{
+                                    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                                    color: 'black',
+                                    border: 'none',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                <Sparkles size={16} className="mr-xs" />
+                                Get Premium
+                            </button>
+                        ) : (
+                            <div className="text-sm text-muted">
+                                Thanks for supporting!
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

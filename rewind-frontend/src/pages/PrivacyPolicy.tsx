@@ -121,7 +121,7 @@ export default function PrivacyPolicy() {
                         If you have any questions about this Privacy Policy, please contact us at:
                     </p>
                     <p>
-                        <strong>Email:</strong> <a href="mailto:support@rewind.app">support@rewind.app</a><br />
+                        <strong>Email:</strong> <a href="mailto:gajanan1055@gmail.com">gajanan1055@gmail.com</a><br />
                         <strong>Address:</strong> Bangalore, Karnataka, India
                     </p>
                 </section>
