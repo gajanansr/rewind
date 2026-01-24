@@ -2,6 +2,7 @@ package com.rewind.config;
 
 import com.rewind.model.User;
 import com.rewind.repository.UserRepository;
+import com.rewind.service.SubscriptionService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
@@ -37,6 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String supabaseUrl;
 
     private final UserRepository userRepository;
+    private final SubscriptionService subscriptionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
@@ -45,8 +47,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private long cacheExpiry = 0;
     private static final long CACHE_DURATION_MS = 3600000; // 1 hour
 
-    public JwtAuthenticationFilter(UserRepository userRepository) {
+    public JwtAuthenticationFilter(UserRepository userRepository, SubscriptionService subscriptionService) {
         this.userRepository = userRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     @Override
@@ -269,6 +272,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .interviewTargetDays(targetDays)
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // Create 14-day free trial for new users
+        try {
+            subscriptionService.createTrialSubscription(savedUser);
+            logger.info("Created trial subscription for new user: " + savedUser.getId());
+        } catch (Exception e) {
+            logger.warn("Failed to create trial subscription for user " + savedUser.getId() + ": " + e.getMessage());
+        }
+
+        return savedUser;
     }
 }

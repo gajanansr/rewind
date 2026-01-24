@@ -60,6 +60,11 @@ gemini:
 openai:
   api-key: ${OPENAI_API_KEY:}
 
+# Razorpay Configuration (for payments)
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
 # CORS Configuration  
 cors:
   allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}

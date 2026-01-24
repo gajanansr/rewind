@@ -40,6 +40,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/questions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/patterns/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/plans").permitAll()
+                        .requestMatchers("/api/v1/webhooks/**").permitAll() // Razorpay webhooks
                         .requestMatchers("/health", "/actuator/**").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated())

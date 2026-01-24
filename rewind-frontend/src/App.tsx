@@ -12,6 +12,8 @@ import Learn from './pages/Learn';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import Pricing from './pages/Pricing';
+import TrialBanner from './components/TrialBanner';
 import './styles/index.css';
 import './styles/landing.css';
 
@@ -193,10 +195,16 @@ function App() {
       <BrowserRouter>
         <div className="app-container">
           <Navigation />
+          <TrialBanner />
 
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/landing" element={<Landing />} />
+            <Route path="/pricing" element={
+              <ProtectedRoute>
+                <Pricing />
+              </ProtectedRoute>
+            } />
 
             <Route path="/" element={
               <HomeRoute />

@@ -45,6 +45,13 @@ class ApiClient {
                 throw new Error('You do not have permission to access this resource.');
             }
 
+            // Handle 402 Payment Required - subscription expired
+            if (response.status === 402) {
+                // Redirect to pricing page
+                window.location.href = '/pricing';
+                throw new Error('Subscription required. Please upgrade your plan.');
+            }
+
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
             throw new Error(error.message || `HTTP ${response.status}`);
         }
@@ -195,6 +202,44 @@ class ApiClient {
 
         return response;
     }
+
+    // ========== Subscription APIs ==========
+
+    getSubscriptionStatus() {
+        return this.request<SubscriptionStatusResponse>('/subscription');
+    }
+
+    getSubscriptionActive() {
+        return this.request<{ active: boolean; daysRemaining: number }>('/subscription/active');
+    }
+
+    cancelSubscription() {
+        return this.request<void>('/subscription/cancel', { method: 'POST' });
+    }
+
+    // ========== Payment APIs ==========
+
+    getPaymentPlans() {
+        return this.request<PaymentPlansResponse>('/payments/plans');
+    }
+
+    createPaymentOrder(plan: 'MONTHLY' | 'QUARTERLY') {
+        return this.request<CreateOrderResponse>('/payments/create-order', {
+            method: 'POST',
+            body: { plan },
+        });
+    }
+
+    verifyPayment(orderId: string, paymentId: string, signature: string) {
+        return this.request<VerifyPaymentResponse>('/payments/verify', {
+            method: 'POST',
+            body: {
+                razorpayOrderId: orderId,
+                razorpayPaymentId: paymentId,
+                razorpaySignature: signature,
+            },
+        });
+    }
 }
 
 // Types
@@ -334,4 +379,51 @@ export interface CompleteRevisionRequest {
     newConfidenceScore?: number;
 }
 
+// Subscription Types
+export interface SubscriptionStatusResponse {
+    active: boolean;
+    plan: 'TRIAL' | 'MONTHLY' | 'QUARTERLY' | 'NONE';
+    daysRemaining: number;
+    expiresAt: string | null;
+    startsAt: string | null;
+    isTrial: boolean;
+}
+
+// Payment Types
+export interface PaymentPlan {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    duration: string;
+    description: string;
+    savings?: string;
+    popular?: boolean;
+}
+
+export interface PaymentPlansResponse {
+    plans: PaymentPlan[];
+}
+
+export interface CreateOrderResponse {
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
+    email: string;
+    userId: string;
+    plan: string;
+}
+
+export interface VerifyPaymentResponse {
+    success: boolean;
+    message: string;
+    subscription?: {
+        plan: string;
+        expiresAt: string;
+        daysRemaining: number;
+    };
+}
+
 export const api = new ApiClient();
+
