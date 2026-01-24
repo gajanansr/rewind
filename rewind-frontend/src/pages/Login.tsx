@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [mode, setMode] = useState<'signin' | 'signup'>('signin');
     const [message, setMessage] = useState('');
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     const setAuth = useAuthStore((state) => state.setAuth);
     const navigate = useNavigate();
@@ -25,6 +26,12 @@ export default function Login() {
 
         try {
             if (mode === 'signup') {
+                // Validate terms agreement
+                if (!agreedToTerms) {
+                    setError('Please agree to the Terms of Service and Privacy Policy');
+                    setIsLoading(false);
+                    return;
+                }
                 // Sign up with email and password
                 const { data, error: signUpError } = await supabase.auth.signUp({
                     email,
@@ -200,6 +207,25 @@ export default function Login() {
                             <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: 'var(--spacing-xs)' }}>
                                 Target: Clear all 169 questions in {targetDays} days
                             </p>
+                        </div>
+                    )}
+
+                    {/* Terms Agreement - Only show during signup */}
+                    {mode === 'signup' && (
+                        <div className="mb-lg">
+                            <label className="terms-checkbox">
+                                <input
+                                    type="checkbox"
+                                    checked={agreedToTerms}
+                                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                />
+                                <span className="terms-text">
+                                    I agree to the{' '}
+                                    <Link to="/terms" target="_blank">Terms of Service</Link>{' '}
+                                    and{' '}
+                                    <Link to="/privacy" target="_blank">Privacy Policy</Link>
+                                </span>
+                            </label>
                         </div>
                     )}
 

@@ -13,6 +13,10 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
 import Pricing from './pages/Pricing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import RefundPolicy from './pages/RefundPolicy';
+import Contact from './pages/Contact';
 import TrialBanner from './components/TrialBanner';
 import './styles/index.css';
 import './styles/landing.css';
@@ -247,6 +251,12 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             } />
+
+            {/* Public Policy Pages */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/refund" element={<RefundPolicy />} />
+            <Route path="/contact" element={<Contact />} />
           </Routes>
         </div>
       </BrowserRouter>

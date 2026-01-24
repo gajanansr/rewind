@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
@@ -251,11 +251,17 @@ export default function Landing() {
                         <div className="footer-brand">↻ Rewind</div>
                         <p className="footer-tagline">Master DSA. Crack FAANG.</p>
                     </div>
+                    <div className="footer-links">
+                        <Link to="/privacy">Privacy Policy</Link>
+                        <Link to="/terms">Terms of Service</Link>
+                        <Link to="/refund">Refund Policy</Link>
+                        <Link to="/contact">Contact</Link>
+                    </div>
                     <a href="https://www.buymeacoffee.com/gajanansr" target="_blank" rel="noopener noreferrer" className="footer-support">
                         <Coffee size={16} /> Buy me a coffee
                     </a>
                 </div>
-                <div className="footer-bottom">© 2024 Rewind</div>
+                <div className="footer-bottom">© 2026 Rewind. All rights reserved.</div>
             </footer>
         </div>
     );
