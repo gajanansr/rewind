@@ -14,10 +14,13 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.util.Set;
 
 /**
- * Interceptor that checks if user has active subscription before allowing
- * access
- * to protected endpoints. Returns 402 Payment Required if subscription is
- * expired.
+ * Interceptor that checks if user has active subscription for PREMIUM features.
+ * Returns 402 Payment Required if subscription is expired for premium
+ * endpoints.
+ * 
+ * FREEMIUM MODEL:
+ * - FREE: Dashboard, Questions list, basic question marking, profile
+ * - PREMIUM: Recording analysis (AI feedback), Learn page, Revisions tracking
  */
 @Component
 @RequiredArgsConstructor
@@ -26,22 +29,17 @@ public class SubscriptionInterceptor implements HandlerInterceptor {
 
     private final SubscriptionService subscriptionService;
 
-    // Endpoints that don't require subscription (public or subscription-related)
-    private static final Set<String> EXEMPT_PATHS = Set.of(
-            "/api/v1/auth",
-            "/api/v1/subscription",
-            "/api/v1/payments",
-            "/api/v1/webhooks",
-            "/api/v1/questions", // Allow viewing questions (read-only)
-            "/api/v1/patterns", // Allow viewing patterns
-            "/health",
-            "/actuator");
+    // Premium endpoints that REQUIRE subscription
+    private static final Set<String> PREMIUM_PATHS = Set.of(
+            "/api/v1/recordings", // AI analysis of recordings
+            "/api/v1/feedback", // AI feedback
+            "/api/v1/learn", // Learn feature
+            "/api/v1/analytics" // Detailed analytics
+    );
 
-    // Specific methods that are exempt (e.g., GET requests for browsing)
-    private static final Set<String> EXEMPT_GET_PATHS = Set.of(
-            "/api/v1/user-questions/status-map", // Allow status check
-            "/api/v1/revisions/pending", // Allow viewing pending revisions
-            "/api/v1/revisions/today" // Allow viewing today's revisions
+    // Premium POST/PUT operations
+    private static final Set<String> PREMIUM_WRITE_PATHS = Set.of(
+            "/api/v1/revisions" // Creating/updating revisions requires premium
     );
 
     @Override
@@ -55,13 +53,8 @@ public class SubscriptionInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Check if path is exempt
-        if (isExemptPath(path)) {
-            return true;
-        }
-
-        // Check if it's an exempt GET request
-        if ("GET".equalsIgnoreCase(method) && isExemptGetPath(path)) {
+        // Only check subscription for premium paths
+        if (!isPremiumPath(path, method)) {
             return true;
         }
 
@@ -78,22 +71,30 @@ public class SubscriptionInterceptor implements HandlerInterceptor {
         boolean hasActiveSubscription = subscriptionService.isSubscriptionActive(user.getId());
 
         if (!hasActiveSubscription) {
-            log.info("User {} blocked due to expired subscription for path: {}", user.getId(), path);
+            log.info("User {} blocked from premium feature. Path: {}", user.getId(), path);
             response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED); // 402
             response.setContentType("application/json");
             response.getWriter().write(
-                    "{\"error\":\"Subscription required\",\"code\":\"SUBSCRIPTION_EXPIRED\",\"message\":\"Your subscription has expired. Please upgrade to continue.\"}");
+                    "{\"error\":\"Premium feature\",\"code\":\"SUBSCRIPTION_REQUIRED\",\"message\":\"This is a premium feature. Please upgrade to access.\"}");
             return false;
         }
 
         return true;
     }
 
-    private boolean isExemptPath(String path) {
-        return EXEMPT_PATHS.stream().anyMatch(path::startsWith);
-    }
+    /**
+     * Check if the path requires premium subscription.
+     * Uses whitelist approach - only specific paths require subscription.
+     */
+    private boolean isPremiumPath(String path, String method) {
+        // Check if it's a premium path
+        boolean isPremium = PREMIUM_PATHS.stream().anyMatch(path::startsWith);
 
-    private boolean isExemptGetPath(String path) {
-        return EXEMPT_GET_PATHS.stream().anyMatch(path::startsWith);
+        // Check if it's a premium write operation
+        if (!isPremium && !method.equalsIgnoreCase("GET")) {
+            isPremium = PREMIUM_WRITE_PATHS.stream().anyMatch(path::startsWith);
+        }
+
+        return isPremium;
     }
 }

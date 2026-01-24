@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Clock, AlertTriangle, Sparkles } from 'lucide-react';
+import { Clock, AlertTriangle, Sparkles, Crown } from 'lucide-react';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
 import { Link } from 'react-router-dom';
 
@@ -14,18 +14,18 @@ export default function TrialBanner() {
     if (isLoading) return null;
     if (plan === 'MONTHLY' || plan === 'QUARTERLY') return null;
 
-    // Trial expired
+    // Trial expired - still allow usage but encourage upgrade
     if (!isActive && plan !== 'NONE') {
         return (
             <div className="trial-banner trial-banner--expired">
                 <div className="trial-banner__content">
-                    <AlertTriangle size={18} />
+                    <Crown size={18} />
                     <span>
-                        Your trial has expired.{' '}
+                        Your trial has ended.{' '}
                         <Link to="/pricing" className="trial-banner__link">
-                            Upgrade now
+                            Upgrade to unlock
                         </Link>{' '}
-                        to continue using Rewind.
+                        AI feedback & learning features.
                     </span>
                 </div>
             </div>
@@ -53,16 +53,16 @@ export default function TrialBanner() {
         );
     }
 
-    // No subscription at all
+    // No subscription at all - freemium user
     if (plan === 'NONE') {
         return (
-            <div className="trial-banner trial-banner--expired">
+            <div className="trial-banner trial-banner--promo">
                 <div className="trial-banner__content">
-                    <AlertTriangle size={18} />
+                    <Crown size={18} />
                     <span>
-                        You need a subscription to use Rewind.{' '}
+                        Unlock AI feedback & learning features.{' '}
                         <Link to="/pricing" className="trial-banner__link">
-                            View plans
+                            Start 14-day free trial
                         </Link>
                     </span>
                 </div>

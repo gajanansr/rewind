@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { RefreshCw, Mic, FileCode, Bot, Lightbulb, HelpCircle, MessageCircle, PartyPopper, Circle, Square } from 'lucide-react';
+import { RefreshCw, Mic, FileCode, Bot, Lightbulb, HelpCircle, MessageCircle, PartyPopper, Circle, Square, Lock } from 'lucide-react';
 import Markdown from 'react-markdown';
 import AudioPlayer from '../components/AudioPlayer';
+import { usePremiumAccess } from '../components/PremiumGate';
 
 type Step = 'history' | 'start' | 'solve' | 'code' | 'record' | 'done';
 
@@ -25,6 +26,7 @@ export default function Solve() {
     const [error, setError] = useState<string | null>(null);
 
     const recorder = useAudioRecorder();
+    const { hasPremium } = usePremiumAccess();
 
     // Fetch question data from API
     const { data: question, isLoading: questionLoading } = useQuery({
@@ -68,7 +70,12 @@ export default function Solve() {
             leetcodeSubmissionLink: leetcodeLink || undefined,
         }),
         onSuccess: () => {
-            setStep('record');
+            // Premium users go to recording, free users skip to done
+            if (hasPremium) {
+                setStep('record');
+            } else {
+                setStep('done');
+            }
         },
         onError: (err) => {
             setError(err instanceof Error ? err.message : 'Failed to submit solution');
@@ -469,8 +476,14 @@ export default function Solve() {
                         onClick={handleSubmitCode}
                         disabled={isLoading || !code.trim()}
                     >
-                        {submitSolutionMutation.isPending ? 'Saving...' : 'Next: Record Explanation'}
+                        {submitSolutionMutation.isPending ? 'Saving...' : (hasPremium ? 'Next: Record Explanation' : 'Save Solution')}
                     </button>
+                    {!hasPremium && (
+                        <p className="text-muted mt-md" style={{ fontSize: '0.875rem' }}>
+                            <Lock size={14} style={{ display: 'inline-block', marginRight: '4px' }} />
+                            Recording & AI feedback requires a premium subscription
+                        </p>
+                    )}
                 </div>
             )}
 

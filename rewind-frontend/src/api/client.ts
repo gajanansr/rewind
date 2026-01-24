@@ -45,11 +45,13 @@ class ApiClient {
                 throw new Error('You do not have permission to access this resource.');
             }
 
-            // Handle 402 Payment Required - subscription expired
+            // Handle 402 Payment Required - premium feature
             if (response.status === 402) {
-                // Redirect to pricing page
-                window.location.href = '/pricing';
-                throw new Error('Subscription required. Please upgrade your plan.');
+                const error = await response.json().catch(() => ({ message: 'Premium feature' }));
+                const premiumError = new Error(error.message || 'This is a premium feature. Please upgrade to access.');
+                (premiumError as any).code = 'SUBSCRIPTION_REQUIRED';
+                (premiumError as any).status = 402;
+                throw premiumError;
             }
 
             const error = await response.json().catch(() => ({ message: 'Request failed' }));
