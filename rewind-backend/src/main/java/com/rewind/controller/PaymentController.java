@@ -79,25 +79,25 @@ public class PaymentController {
          */
         @GetMapping("/plans")
         public ResponseEntity<?> getPlans() {
-                return ResponseEntity.ok(Map.of(
-                                "plans", new Object[] {
-                                                Map.of(
-                                                                "id", "MONTHLY",
-                                                                "name", "Monthly",
-                                                                "price", 149,
-                                                                "currency", "INR",
-                                                                "duration", "30 days",
-                                                                "description", "Full access for 1 month"),
-                                                Map.of(
-                                                                "id", "QUARTERLY",
-                                                                "name", "Quarterly",
-                                                                "price", 299,
-                                                                "currency", "INR",
-                                                                "duration", "90 days",
-                                                                "description", "Full access for 3 months",
-                                                                "savings", "Save ₹148",
-                                                                "popular", true)
-                                }));
+                var monthlyPlan = Map.of(
+                        "id", "MONTHLY",
+                        "name", "Monthly",
+                        "price", 149,
+                        "currency", "INR",
+                        "duration", "30 days",
+                        "description", "Full access for 1 month");
+
+                var quarterlyPlan = Map.of(
+                        "id", "QUARTERLY",
+                        "name", "Quarterly",
+                        "price", 299,
+                        "currency", "INR",
+                        "duration", "90 days",
+                        "description", "Full access for 3 months",
+                        "savings", "Save ₹148",
+                        "popular", true);
+
+                return ResponseEntity.ok(Map.of("plans", java.util.List.of(monthlyPlan, quarterlyPlan)));
         }
 
         // Request/Response records
